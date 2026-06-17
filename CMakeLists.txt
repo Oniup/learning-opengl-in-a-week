@@ -54,6 +54,7 @@ add_subdirectory(thirdparty/fmt)
 add_subdirectory(thirdparty/SDL)
 add_subdirectory(thirdparty/SDL_image)
 add_subdirectory(thirdparty/glad)
+add_subdirectory(thirdparty/glm)
 
 target_link_libraries(LearningOpenGL
 PRIVATE
@@ -61,4 +62,5 @@ PRIVATE
     SDL3::SDL3
     SDL3_image::SDL3_image
     glad
+    glm::glm
 )

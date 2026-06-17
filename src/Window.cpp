@@ -108,13 +108,24 @@ bool Window::IsRunning()
 
 void Window::HandleEvents(const SDL_Event& event)
 {
-    if (event.type == SDL_EVENT_QUIT)
-        m_Running = false;
+    switch (event.type)
+    {
+    case SDL_EVENT_QUIT:           m_Running = false;
+    case SDL_EVENT_WINDOW_RESIZED: UpdateViewport();
+    }
 }
 
 void Window::SwapBuffers()
 {
     SDL_GL_SwapWindow(m_Window);
+}
+
+void Window::UpdateViewport()
+{
+    int width, height;
+    SDL_GetWindowSize(m_Window, &width, &height);
+
+    glViewport(0, 0, width, height);
 }
 
 } // namespace LrnGL

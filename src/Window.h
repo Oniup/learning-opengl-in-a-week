@@ -24,6 +24,8 @@ public:
     void SwapBuffers();
 
 private:
+    void UpdateViewport();
+
     bool m_Running          = true;
     SDL_Window* m_Window    = nullptr;
     SDL_GLContext m_Context = nullptr;
