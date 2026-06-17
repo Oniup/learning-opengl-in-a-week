@@ -12,10 +12,10 @@ namespace LrnGL {
 
 static std::string_view GetSDLError()
 {
-    constexpr size_t bufferLength = 1024;
-    static char buffer[bufferLength];
+    constexpr size_t buffer_length = 1024;
+    static char buffer[buffer_length];
 
-    auto result = fmt::format_to_n(buffer, bufferLength - 1, "{}", SDL_GetError());
+    auto result = fmt::format_to_n(buffer, buffer_length - 1, "{}", SDL_GetError());
     *result.out = '\0';
     return std::string_view(buffer, result.size);
 }
@@ -49,15 +49,16 @@ Window::Window(int width, int height)
         FATAL("Failed to create SDL OpenGL Context: {}", error);
     }
 
-    bool gladVersion = gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
-    if (gladVersion == 0)
+    bool glad_version = gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
+    if (glad_version == 0)
     {
         Shutdown();
         FATAL("Failed to initialize OpenGL using glad");
     }
 
-    fmt::print(
-        "Loaded OpenGL {}.{}\n", GLAD_VERSION_MAJOR(gladVersion), GLAD_VERSION_MINOR(gladVersion));
+    fmt::print("Loaded OpenGL {}.{}\n",
+               GLAD_VERSION_MAJOR(glad_version),
+               GLAD_VERSION_MINOR(glad_version));
 }
 
 Window::~Window()

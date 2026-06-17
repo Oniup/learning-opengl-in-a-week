@@ -11,23 +11,32 @@
 namespace fs = std::filesystem;
 
 glm::vec3 vertices[] = {
-    glm::vec3(-0.5f, -0.5f, 0.0f),
-    glm::vec3(0.5f, -0.5f, 0.0f),
-    glm::vec3(0.0f, 0.5f, 0.0f),
+    glm::vec3(0.5f, 0.5f, 0.0f),   // top right
+    glm::vec3(0.5f, -0.5f, 0.0f),  // bottom right
+    glm::vec3(-0.5f, -0.5f, 0.0f), // bottom left
+    glm::vec3(-0.5f, 0.5f, 0.0f),  // top left
 };
+size_t vertices_size = sizeof(vertices) / sizeof(glm::vec3);
+
+// clang-format off
+unsigned int indices[] = {
+    0, 1, 3, // first triangle
+    1, 2, 3  // second triangle
+};
+// clang-format on
 
 fs::path GetStoredAssetDirectory(std::string_view target)
 {
-    fs::path workingDirectory = fs::current_path();
-    while (workingDirectory.has_parent_path())
+    fs::path working_dir = fs::current_path();
+    while (working_dir.has_parent_path())
     {
-        auto enumerateDirectories = fs::directory_iterator(workingDirectory);
+        auto enumerate_directories = fs::directory_iterator(working_dir);
 
-        for (const fs::directory_entry& dir : enumerateDirectories)
+        for (const fs::directory_entry& dir : enumerate_directories)
             if (dir.is_directory() && dir.path().filename() == target)
                 return dir.path();
 
-        workingDirectory = workingDirectory.parent_path();
+        working_dir = working_dir.parent_path();
     }
 
     ASSERT(false, "Failed to find working directory");
@@ -35,21 +44,27 @@ fs::path GetStoredAssetDirectory(std::string_view target)
 
 int main(int argc, char** argv)
 {
-    fs::path shaderDir = GetStoredAssetDirectory("shaders");
+    fs::path shader_dir = GetStoredAssetDirectory("shaders");
     LrnGL::Window window(800, 800);
 
     auto shader =
-        LrnGL::Shader::Load(shaderDir / "basic-fragment.glsl", shaderDir / "basic-vertex.glsl");
+        LrnGL::Shader::Load(shader_dir / "basic-fragment.glsl", shader_dir / "basic-vertex.glsl");
 
-    unsigned vertexArray;
-    glGenVertexArrays(1, &vertexArray);
-    glBindVertexArray(vertexArray);
+    unsigned vertex_array;
+    glGenVertexArrays(1, &vertex_array);
+    glBindVertexArray(vertex_array);
 
-    unsigned vertexBuffer;
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    unsigned vertex_buffer;
+    unsigned element_buffer;
+    glGenBuffers(1, &vertex_buffer);
+    glGenBuffers(1, &element_buffer);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
+
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(0);
 
@@ -64,9 +79,10 @@ int main(int argc, char** argv)
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindVertexArray(vertexArray);
+        glBindVertexArray(vertex_array);
         glUseProgram(shader.ID);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // glDrawArrays(GL_TRIANGLES, 0, vertices_size);
+        glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned), GL_UNSIGNED_INT, (void*)0);
 
         window.SwapBuffers();
     }

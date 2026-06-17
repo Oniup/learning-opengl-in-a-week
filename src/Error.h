@@ -28,7 +28,6 @@ void OnAssert(std::string_view file, std::string_view function, int line,
 {
     PrintErrorHeaderMessage(Severity_Error, file, function, line, expression);
 
-    constexpr int maxBufferSize = 2048;
     fmt::println(stderr, format, std::forward<Args>(args)...);
     std::fflush(stderr);
 }
