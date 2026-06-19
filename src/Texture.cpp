@@ -9,57 +9,80 @@
 
 namespace lgl {
 
-Texture Texture::Invalid{.ID = 0};
+Texture Texture::Invalid;
 
-Texture Texture::Load(std::string_view path)
+Texture::Texture(std::string_view path, TextureFilter filter)
 {
     SDL_Surface* loaded_surface = IMG_Load(path.data());
     ASSERT(loaded_surface, "Failed to load image from '{}'", path);
+    SDL_FlipSurface(loaded_surface, SDL_FLIP_VERTICAL);
 
     SDL_Surface* surface = SDL_ConvertSurface(loaded_surface, SDL_PIXELFORMAT_RGBA32);
     ASSERT(surface, "Failed to convert image to OpenGL friendly surface");
 
-    unsigned texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    m_Width  = surface->w;
+    m_Height = surface->h;
+
+    glGenTextures(1, &m_ID);
+    glBindTexture(GL_TEXTURE_2D, m_ID);
+
+    int min_filter;
+    int mag_filter;
+    switch (filter)
+    {
+    case TextureFilter::Linear:
+        min_filter = GL_LINEAR_MIPMAP_LINEAR;
+        mag_filter = GL_LINEAR;
+        break;
+    case TextureFilter::Nearest:
+        min_filter = GL_NEAREST_MIPMAP_NEAREST;
+        mag_filter = GL_NEAREST;
+        break;
+    case TextureFilter::LinearNoMipmap:
+        min_filter = GL_LINEAR;
+        mag_filter = GL_LINEAR;
+        break;
+    case TextureFilter::NearestNoMipmap:
+        min_filter = GL_NEAREST;
+        mag_filter = GL_NEAREST;
+        break;
+    }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
 
     glTexImage2D(GL_TEXTURE_2D,
                  0,
                  GL_RGBA,
-                 surface->w,
-                 surface->h,
+                 m_Width,
+                 m_Height,
                  0,
                  GL_RGBA,
                  GL_UNSIGNED_BYTE,
                  surface->pixels);
-    glGenerateMipmap(GL_TEXTURE_2D);
 
-    Texture result = {
-        .ID     = texture,
-        .Width  = surface->w,
-        .Height = surface->h,
-    };
+    if (filter <= TextureFilter::Nearest)
+        glGenerateMipmap(GL_TEXTURE_2D);
 
     SDL_DestroySurface(loaded_surface);
     SDL_DestroySurface(surface);
-    glBindTexture(GL_TEXTURE_2D, 0);
+}
 
-    return result;
+Texture::~Texture()
+{
+    Shutdown();
 }
 
 void Texture::Shutdown()
 {
-    if (ID != 0)
+    if (m_ID != 0)
     {
-        glDeleteTextures(1, &ID);
-        ID     = 0;
-        Width  = 0;
-        Height = 0;
+        glDeleteTextures(1, &m_ID);
+        m_ID     = 0;
+        m_Width  = 0;
+        m_Height = 0;
     }
 }
 

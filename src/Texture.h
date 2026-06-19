@@ -6,16 +6,33 @@
 
 namespace lgl {
 
-struct Texture
+enum class TextureFilter
 {
+    Linear,
+    Nearest,
+    LinearNoMipmap,
+    NearestNoMipmap,
+};
+
+class Texture
+{
+public:
     static Texture Invalid;
 
-    unsigned ID = 0;
-    int Width   = 0;
-    int Height  = 0;
+    Texture() = default;
+    Texture(std::string_view path, TextureFilter filter = TextureFilter::Linear);
+    ~Texture();
 
-    static Texture Load(std::string_view path);
     void Shutdown();
+
+    unsigned GetID() const { return m_ID; }
+    int GetWidth() const { return m_Width; }
+    int GetHeight() const { return m_Height; }
+
+private:
+    unsigned m_ID = 0;
+    int m_Width   = 0;
+    int m_Height  = 0;
 };
 
 } // namespace lgl

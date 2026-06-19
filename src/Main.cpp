@@ -10,26 +10,20 @@
 #include "Error.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "VertexBuffer.h"
 #include "Window.h"
 
 namespace fs = std::filesystem;
 
-struct Vertex
-{
-    glm::vec3 Position;
-    glm::vec3 Color;
-    glm::vec2 UV;
-};
-
-Vertex vertices[] = {
+lgl::Vertex vertices[] = {
     // top right
-    Vertex{glm::vec3(0.5f,  0.5f,  0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
+    lgl::Vertex{glm::vec3(0.5f,  0.5f,  0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
     // bottom right
-    Vertex{glm::vec3(0.5f,  -0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
+    lgl::Vertex{glm::vec3(0.5f,  -0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
     // bottom left
-    Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)},
+    lgl::Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)},
     // top left
-    Vertex{glm::vec3(-0.5f, 0.5f,  0.0f), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}
+    lgl::Vertex{glm::vec3(-0.5f, 0.5f,  0.0f), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}
 };
 
 // clang-format off
@@ -56,44 +50,24 @@ std::string GetAssetDirectory(std::string_view target = "assets")
     ASSERT(false, "Failed to find working directory");
 }
 
-void SetVertexAttribPointer(unsigned index, unsigned size, float stride, const void* offset)
-{
-    glVertexAttribPointer(index, size, GL_FLOAT, GL_FALSE, stride, offset);
-    glEnableVertexAttribArray(index);
-}
-
 int main(int argc, char** argv)
 {
     std::string asset_dir = GetAssetDirectory();
     lgl::Window window(800, 800);
 
-    auto shader = lgl::Shader::Load(fmt::format("{}/shaders/Fragment.glsl", asset_dir),
-                                    fmt::format("{}/shaders/Vertex.glsl", asset_dir));
+    lgl::Shader shader(fmt::format("{}/shaders/Fragment.glsl", asset_dir),
+                       fmt::format("{}/shaders/Vertex.glsl", asset_dir));
+    shader.InitializeTextureIDs(2);
 
-    glUseProgram(shader.ID);
-    glUniform1i(glGetUniformLocation(shader.ID, "Texture0"), 0);
-    glUniform1i(glGetUniformLocation(shader.ID, "Texture1"), 1);
+    lgl::Texture bg_texture(fmt::format("{}/textures/wall.jpg", asset_dir));
+    lgl::Texture fg_texture(fmt::format("{}/textures/awesomeface.png", asset_dir));
 
-    auto bg_texture = lgl::Texture::Load(fmt::format("{}/textures/wall.jpg", asset_dir));
-    auto fg_texture = lgl::Texture::Load(fmt::format("{}/textures/awesomeface.png", asset_dir));
-
-    unsigned vertex_array;
-    glGenVertexArrays(1, &vertex_array);
-    glBindVertexArray(vertex_array);
-
-    unsigned vertex_buffer;
-    unsigned element_buffer;
-    glGenBuffers(1, &vertex_buffer);
-    glGenBuffers(1, &element_buffer);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    SetVertexAttribPointer(0, 3, sizeof(Vertex), (void*)offsetof(Vertex, Position));
-    SetVertexAttribPointer(1, 3, sizeof(Vertex), (void*)offsetof(Vertex, Color));
-    SetVertexAttribPointer(2, 2, sizeof(Vertex), (void*)offsetof(Vertex, UV));
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    lgl::VertexBuffer buffer(true);
+    buffer.PushAttribute(0, 3, offsetof(lgl::Vertex, Position));
+    buffer.PushAttribute(1, 3, offsetof(lgl::Vertex, Color));
+    buffer.PushAttribute(2, 2, offsetof(lgl::Vertex, UV));
+    buffer.PushData(lgl::VertexBuffer_Vertex, sizeof(vertices), vertices);
+    buffer.PushData(lgl::VertexBuffer_Element, sizeof(indices), indices);
 
     size_t indices_size = sizeof(indices) / sizeof(unsigned);
 
@@ -108,19 +82,12 @@ int main(int argc, char** argv)
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindVertexArray(vertex_array);
-        glUseProgram(shader.ID);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, bg_texture.ID);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fg_texture.ID);
-
-        glDrawElements(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, (void*)0);
+        shader.BindTexture(bg_texture, 0);
+        shader.BindTexture(fg_texture, 1);
+        buffer.Draw(shader);
 
         window.SwapBuffers();
     }
 
-    shader.Shutdown();
     return 0;
 }
