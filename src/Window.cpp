@@ -1,14 +1,15 @@
 #include "Window.h"
 
-#include "Error.h"
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_video.h>
+#include <glad/gl.h>
 
-#include "SDL3/SDL_events.h"
-#include "SDL3/SDL_init.h"
-#include "SDL3/SDL_video.h"
-#include "glad/gl.h"
 #include <string_view>
 
-namespace LrnGL {
+#include "Error.h"
+
+namespace lgl {
 
 static std::string_view GetSDLError()
 {
@@ -129,4 +130,4 @@ void Window::UpdateViewport()
     glViewport(0, 0, width, height);
 }
 
-} // namespace LrnGL
+} // namespace lgl

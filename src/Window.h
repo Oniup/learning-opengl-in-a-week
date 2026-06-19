@@ -1,11 +1,11 @@
 #pragma once
 
-#include "SDL3/SDL_events.h"
+#include <SDL3/SDL_events.h>
 
 struct SDL_Window;
 typedef struct SDL_GLContextState* SDL_GLContext;
 
-namespace LrnGL {
+namespace lgl {
 
 class Window
 {
@@ -31,4 +31,4 @@ private:
     SDL_GLContext m_Context = nullptr;
 };
 
-} // namespace LrnGL
+} // namespace lgl

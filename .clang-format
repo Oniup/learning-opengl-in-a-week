@@ -143,20 +143,21 @@ ForEachMacros:
     - BOOST_FOREACH
 IfMacros:
     - KJ_IF_MAYBE
-IncludeBlocks: Preserve
+
+# Sorting and block includes
+SortIncludes: true
+IncludeBlocks: Regroup
 IncludeCategories:
-    - Regex: '^"(llvm|llvm-c|clang|clang-c)/'
-      Priority: 2
-      SortPriority: 0
-      CaseSensitive: false
-    - Regex: '^(<|"(gtest|gmock|isl|json)/)'
-      Priority: 3
-      SortPriority: 0
-      CaseSensitive: false
-    - Regex: ".*"
+    - Regex: "^<(glad|SDL3|SDL3_image|fmt|glm)/.*>" # Thirdparty libraries <glad/gl.h>
       Priority: 1
-      SortPriority: 0
-      CaseSensitive: false
+      CaseSensitive: true
+    - Regex: "^<[a-z_]+>$" # std library such as <vector>
+      Priority: 2
+      CaseSensitive: true
+    - Regex: '^".*"' # Custom source
+      Priority: 3
+      CaseSensitive: true
+
 IncludeIsMainRegex: "(Test)?$"
 IncludeIsMainSourceRegex: ""
 IndentAccessModifiers: false
@@ -225,7 +226,6 @@ RequiresExpressionIndentation: OuterScope
 SeparateDefinitionBlocks: Leave
 ShortNamespaceLines: 1
 SkipMacroDefinitionBody: false
-SortIncludes: CaseSensitive
 SortJavaStaticImport: Before
 SortUsingDeclarations: LexicographicNumeric
 SpaceAfterCStyleCast: false

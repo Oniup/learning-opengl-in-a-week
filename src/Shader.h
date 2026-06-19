@@ -1,18 +1,17 @@
 #pragma once
 
-#include <filesystem>
-#include <limits>
+#include <string_view>
 
-namespace LrnGL {
+namespace lgl {
 
 struct Shader
 {
+    static Shader InvalidShader;
+
     unsigned ID = 0;
 
-    static Shader Load(const std::filesystem::path& fragment, const std::filesystem::path& vertex);
+    static Shader Load(std::string_view fragment, std::string_view vertex);
     void Shutdown();
 };
 
-static constexpr Shader InvalidShader{.ID = std::numeric_limits<unsigned>::max()};
-
-} // namespace LrnGL
+} // namespace lgl

@@ -1,31 +1,38 @@
 #include "Shader.h"
-#include "Error.h"
 
-#include "glad/gl.h"
+#include <glad/gl.h>
+
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <string>
 
-namespace LrnGL {
+#include "Error.h"
 
-static constexpr size_t InfoLogSize = 1024;
+namespace lgl {
 
-Shader Shader::Load(const std::filesystem::path& fragment, const std::filesystem::path& vertex)
+static constexpr size_t info_log_size = 1024;
+Shader Shader::InvalidShader          = {.ID = std::numeric_limits<unsigned>::max()};
+
+Shader Shader::Load(std::string_view fragment, std::string_view vertex)
 {
-    constexpr size_t shader_count                                       = 2;
-    std::array<const std::filesystem::path*, shader_count> source_paths = {&fragment, &vertex};
-    std::array<unsigned, 2> shaderIDs                                   = {};
+    constexpr size_t shader_count                           = 2;
+    std::array<std::string_view, shader_count> source_paths = {fragment, vertex};
+    std::array<unsigned, 2> shaderIDs                       = {};
 
     for (size_t i = 0; i < shader_count; i++)
     {
-        const std::filesystem::path& path = *source_paths[i];
+        std::string_view path = source_paths[i];
+        char path_buffer[info_log_size];
+        auto result = fmt::format_to_n(path_buffer, info_log_size - 1, "{}", path);
+        *result.out = '\0';
 
         std::string source;
         size_t source_size = std::filesystem::file_size(path);
         source.resize(source_size);
 
-        std::ifstream stream(path);
+        std::ifstream stream(path_buffer);
         if (!stream.is_open())
         {
             ERROR("Failed to create shader, could not find {} path", path);
@@ -43,8 +50,8 @@ Shader Shader::Load(const std::filesystem::path& fragment, const std::filesystem
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success)
         {
-            char info_log[InfoLogSize];
-            glGetShaderInfoLog(shader, InfoLogSize, nullptr, info_log);
+            char info_log[info_log_size];
+            glGetShaderInfoLog(shader, info_log_size, nullptr, info_log);
             ERROR("Failed to compile shader for path {}: '{}'", path, info_log);
 
             if (i > 0)
@@ -67,8 +74,8 @@ Shader Shader::Load(const std::filesystem::path& fragment, const std::filesystem
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success)
     {
-        char info_log[InfoLogSize];
-        glGetProgramInfoLog(program, InfoLogSize, nullptr, info_log);
+        char info_log[info_log_size];
+        glGetProgramInfoLog(program, info_log_size, nullptr, info_log);
         ERROR("Failed to link shader for paths vertex {} and fragment {}: {}",
               vertex,
               fragment,
@@ -89,4 +96,4 @@ void Shader::Shutdown()
     }
 }
 
-} // namespace LrnGL
+} // namespace lgl

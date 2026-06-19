@@ -1,11 +1,12 @@
 #pragma once
 
-#include "fmt/core.h"
-#include "fmt/std.h"
 #include <cstdio>
 #include <string_view>
 
-namespace eng::err::intl {
+#include "fmt/core.h"
+#include "fmt/std.h" // IWYU pragma: export
+
+namespace lgl::err::intl {
 
 enum SeverityColor
 {
@@ -43,7 +44,7 @@ void OnError(SeverityColor severity, std::string_view file, std::string_view fun
     std::fflush(stderr);
 }
 
-} // namespace eng::err::intl
+} // namespace lgl::err::intl
 
 // https://github.com/scottt/debugbreak/blob/master/debugbreak.h
 #ifndef NDEBUG
@@ -62,7 +63,7 @@ void OnError(SeverityColor severity, std::string_view file, std::string_view fun
     {                                                                                              \
         if (!(expression_))                                                                        \
         {                                                                                          \
-            eng::err::intl::OnAssert(                                                              \
+            lgl::err::intl::OnAssert(                                                              \
                 __FILE__, __FUNCTION__, __LINE__, #expression_ __VA_OPT__(, ) __VA_ARGS__);        \
             DEBUG_BREAK;                                                                           \
             std::exit(-1);                                                                         \
@@ -79,17 +80,17 @@ void OnError(SeverityColor severity, std::string_view file, std::string_view fun
 #define FATAL(...)                                                                                 \
     do                                                                                             \
     {                                                                                              \
-        eng::err::intl::OnError(                                                                   \
-            eng::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__);        \
+        lgl::err::intl::OnError(                                                                   \
+            lgl::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__);        \
         DEBUG_BREAK;                                                                               \
         std::exit(-1);                                                                             \
     }                                                                                              \
     while (false)
 
 #define WARNING(...)                                                                               \
-    eng::err::intl::OnError(                                                                       \
-        eng::err::intl::Severity_Warning, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+    lgl::err::intl::OnError(                                                                       \
+        lgl::err::intl::Severity_Warning, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
 
 #define ERROR(...)                                                                                 \
-    eng::err::intl::OnError(                                                                       \
-        eng::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+    lgl::err::intl::OnError(                                                                       \
+        lgl::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
