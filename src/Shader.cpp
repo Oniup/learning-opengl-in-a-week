@@ -160,13 +160,13 @@ void Shader::Uniform(std::string_view name, glm::vec2 val)
     glUniform2fv(GetUniformLocation(name), 1, glm::value_ptr(val));
 }
 
-void Shader::Uniform(std::string_view name, glm::mat4 val)
+void Shader::Uniform(std::string_view name, const glm::mat4& val)
 {
     glUseProgram(m_ID);
     glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(val));
 }
 
-void Shader::Uniform(std::string_view name, glm::mat3 val)
+void Shader::Uniform(std::string_view name, const glm::mat3& val)
 {
     glUseProgram(m_ID);
     glUniformMatrix3fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(val));

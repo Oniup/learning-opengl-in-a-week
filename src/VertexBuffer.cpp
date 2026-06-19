@@ -63,10 +63,15 @@ void VertexBuffer::Bind()
     glBindVertexArray(m_VertexArray);
 }
 
-void VertexBuffer::Draw(Shader& shader)
+void VertexBuffer::Draw(Shader& shader, const glm::mat4& projection, const glm::mat4& view,
+                        const glm::mat4& model)
 {
     shader.Bind();
     glBindVertexArray(m_VertexArray);
+
+    shader.Uniform("u_Projection", projection);
+    shader.Uniform("u_View", view);
+    shader.Uniform("u_Model", model);
 
     if (ElementBufferEnabled())
         glDrawElements(GL_TRIANGLES, m_BufferSize, GL_UNSIGNED_INT, (void*)0);

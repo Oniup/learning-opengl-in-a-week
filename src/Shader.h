@@ -32,8 +32,8 @@ public:
     void Uniform(std::string_view name, glm::vec4 val);
     void Uniform(std::string_view name, glm::vec3 val);
     void Uniform(std::string_view name, glm::vec2 val);
-    void Uniform(std::string_view name, glm::mat4 val);
-    void Uniform(std::string_view name, glm::mat3 val);
+    void Uniform(std::string_view name, const glm::mat4& val);
+    void Uniform(std::string_view name, const glm::mat3& val);
 
     void Bind();
     void BindTexture(const Texture& texture, unsigned id);
