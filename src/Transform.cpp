@@ -17,39 +17,62 @@ glm::mat4 Transform::GetModelMatrix() const
     return model;
 }
 
-void Transform::RotatePitch(float angle)
+void Transform::SetEulerPitch(float angle)
+{
+    Rotation = glm::vec3(angle, Rotation.y, Rotation.z);
+}
+
+void Transform::SetEulerYaw(float angle)
+{
+    Rotation = glm::vec3(Rotation.z, angle, Rotation.z);
+}
+
+void Transform::SetEulerRoll(float angle)
+{
+    Rotation = glm::vec3(Rotation.z, Rotation.y, angle);
+}
+
+void Transform::SetRotation(glm::vec3 angles)
+{
+}
+
+void Transform::RotatePitch(float angle, bool normalize)
 {
     if (angle == 0.0f)
         return;
-    Rotate(angle, glm::vec3(1.0f, 0.0f, 0.0f));
+    Rotate(angle, glm::vec3(1.0f, 0.0f, 0.0f), normalize);
 }
 
-void Transform::RotateYaw(float angle)
+void Transform::RotateYaw(float angle, bool normalize)
 {
     if (angle == 0.0f)
         return;
-    Rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    Rotate(angle, glm::vec3(0.0f, 1.0f, 0.0f), normalize);
 }
 
-void Transform::RotateRoll(float angle)
+void Transform::RotateRoll(float angle, bool normalize)
 {
     if (angle == 0.0f)
         return;
-    Rotate(angle, glm::vec3(0.0f, 0.0f, 1.0f));
+    Rotate(angle, glm::vec3(0.0f, 0.0f, 1.0f), normalize);
 }
 
-void Transform::Rotate(float angle, glm::vec3 axis)
+void Transform::Rotate(float angle, glm::vec3 axis, bool normalize)
 {
     glm::quat rotation = glm::angleAxis(angle, axis);
     Rotation           = Rotation * rotation;
-    Rotation           = glm::normalize(Rotation);
+    if (normalize)
+        Rotation = glm::normalize(Rotation);
 }
 
-void Transform::Rotate(glm::vec3 angles)
+void Transform::Rotate(glm::vec3 angles, bool normalize)
 {
-    RotatePitch(angles.x);
-    RotateYaw(angles.y);
-    RotateRoll(angles.z);
+    RotatePitch(angles.x, false);
+    RotateYaw(angles.y, false);
+    RotateRoll(angles.z, false);
+
+    if (normalize)
+        Rotation = glm::normalize(Rotation);
 }
 
 } // namespace lgl

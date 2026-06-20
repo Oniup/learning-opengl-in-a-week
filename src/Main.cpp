@@ -1,5 +1,6 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_timer.h>
 #include <fmt/format.h>
 #include <glad/gl.h>
@@ -13,7 +14,9 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <numbers>
 
+#include "Camera.h"
 #include "Error.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -46,6 +49,7 @@ int main(int argc, char** argv)
     lgl::Window window(800, 800);
 
     glEnable(GL_DEPTH_TEST);
+    SDL_SetWindowRelativeMouseMode(window.GetContext(), true);
 
     lgl::Shader shader(fmt::format("{}/shaders/Fragment.glsl", asset_dir),
                        fmt::format("{}/shaders/Vertex.glsl", asset_dir));
@@ -78,23 +82,27 @@ int main(int argc, char** argv)
         lgl::Transform{glm::vec3(-1.3f, 1.0f, -1.5f)},
     };
 
-    float move_speed = 1.0f;
-    float spin_speed = glm::radians(90.0f);
+    float move_speed       = 1.0f;
+    float spin_speed       = glm::radians(90.0f);
+    transforms[0].Rotation = glm::vec3(0.0f, std::numbers::pi / 4, 0.0f);
 
     glm::mat4 projection = glm::perspective(
         glm::radians(45.0f), (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 100.0f);
 
-    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, -2.0f);
+    lgl::Camera camera(glm::vec3(7.0f, -3.0f, 5.0f), 5.0f, 0.01f);
 
     SDL_Event event;
     uint64_t last_time = SDL_GetPerformanceCounter();
+    float elapsed_time = 0.0f;
     while (window.IsRunning())
     {
         uint64_t current_time = SDL_GetPerformanceCounter();
         float delta = (float)(current_time - last_time) / (float)SDL_GetPerformanceFrequency();
         last_time   = current_time;
+        elapsed_time += delta;
 
-        transforms[0].RotateYaw(spin_speed * delta);
+        transforms[0].RotateYaw(delta);
+        transforms[0].RotatePitch(delta);
 
         while (SDL_PollEvent(&event))
         {
@@ -107,23 +115,16 @@ int main(int argc, char** argv)
                                               0.1f,
                                               100.0f);
             }
-        }
 
-        const bool* keyboard_state = SDL_GetKeyboardState(nullptr);
-        if (keyboard_state[SDL_SCANCODE_W])
-            transforms[0].Position.z -= move_speed * delta;
-        if (keyboard_state[SDL_SCANCODE_S])
-            transforms[0].Position.z += move_speed * delta;
-        if (keyboard_state[SDL_SCANCODE_D])
-            transforms[0].Position.x += move_speed * delta;
-        if (keyboard_state[SDL_SCANCODE_A])
-            transforms[0].Position.x -= move_speed * delta;
+            camera.UpdateLookDirection(event, delta);
+        }
+        camera.UpdatePosition(delta);
 
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 view = glm::mat4(1.0f);
-        view           = glm::translate(view, cameraPosition);
+        view           = camera.GetViewMatrix();
 
         shader.BindTexture(bg_texture, 0);
         shader.BindTexture(fg_texture, 1);

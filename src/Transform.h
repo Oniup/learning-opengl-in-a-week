@@ -14,11 +14,17 @@ struct Transform
 
     glm::mat4 GetModelMatrix() const;
 
-    void RotatePitch(float angle);
-    void RotateYaw(float angle);
-    void RotateRoll(float angle);
-    void Rotate(float angle, glm::vec3 axis);
-    void Rotate(glm::vec3 angles);
+    void SetEulerPitch(float angle);
+    void SetEulerYaw(float angle);
+    void SetEulerRoll(float angle);
+
+    void SetRotation(glm::vec3 angles);
+
+    void RotatePitch(float angle, bool normalize = true);
+    void RotateYaw(float angle, bool normalize = true);
+    void RotateRoll(float angle, bool normalize = true);
+    void Rotate(float angle, glm::vec3 axis, bool normalize = true);
+    void Rotate(glm::vec3 angles, bool normalize = true);
 };
 
 } // namespace lgl

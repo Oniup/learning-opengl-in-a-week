@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_video.h>
 
 struct SDL_Window;
 typedef struct SDL_GLContextState* SDL_GLContext;
@@ -18,6 +19,7 @@ public:
     int GetWidth() const;
     int GetHeight() const;
     void GetSize(int& width, int& height) const;
+    SDL_Window* GetContext() const { return m_Window; }
 
     bool IsRunning();
     void HandleEvents(const SDL_Event& event);
