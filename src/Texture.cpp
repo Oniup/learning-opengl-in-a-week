@@ -9,7 +9,7 @@
 
 namespace lgl {
 
-Texture Texture::Invalid;
+Texture Texture::invalid;
 
 Texture::Texture(std::string_view path, TextureFilter filter)
 {

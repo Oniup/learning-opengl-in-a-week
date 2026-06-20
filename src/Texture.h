@@ -17,7 +17,7 @@ enum class TextureFilter
 class Texture
 {
 public:
-    static Texture Invalid;
+    static Texture invalid;
 
     Texture() = default;
     Texture(std::string_view path, TextureFilter filter = TextureFilter::Linear);

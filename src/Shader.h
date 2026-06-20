@@ -15,7 +15,7 @@ namespace lgl {
 class Shader
 {
 public:
-    static Shader InvalidShader;
+    static Shader invalid_shader;
 
     Shader() = default;
     Shader(std::string_view fragment, std::string_view vertex);

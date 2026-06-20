@@ -16,7 +16,7 @@ namespace lgl {
 static constexpr size_t info_log_size    = 1024;
 static constexpr size_t name_buffer_size = 100;
 
-Shader Shader::InvalidShader;
+Shader Shader::invalid_shader;
 
 Shader::Shader(std::string_view fragment, std::string_view vertex)
 {
