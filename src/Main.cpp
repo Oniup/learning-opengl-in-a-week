@@ -94,11 +94,7 @@ int main(int argc, char** argv)
         float delta = (float)(current_time - last_time) / (float)SDL_GetPerformanceFrequency();
         last_time   = current_time;
 
-        float frame_angle      = spin_speed * delta;
-        glm::vec3 spin_axis    = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::quat delta_rot    = glm::angleAxis(frame_angle, spin_axis);
-        transforms[0].Rotation = transforms[0].Rotation * delta_rot;
-        transforms[0].Rotation = glm::normalize(transforms[0].Rotation);
+        transforms[0].RotateYaw(spin_speed * delta);
 
         while (SDL_PollEvent(&event))
         {
