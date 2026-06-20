@@ -12,7 +12,7 @@ struct Transform
     glm::vec3 Scale    = glm::vec3(1.0f);
     glm::quat Rotation = glm::vec3(0.0f);
 
-    glm::mat4 GetModelMatrix() const;
+    glm::mat4 CreateModelMatrix() const;
 
     void SetEulerPitch(float angle);
     void SetEulerYaw(float angle);

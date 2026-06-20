@@ -2,6 +2,7 @@
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_scancode.h>
 #include <glm/ext.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/trigonometric.hpp>
 
@@ -25,6 +26,25 @@ Camera::Camera(glm::vec3 position, float move_speed, float sensitivity, glm::vec
 
     m_Pitch = glm::degrees(rad_pitch);
     m_Yaw   = glm::degrees(rad_yaw);
+}
+
+void Camera::InitializeProjection(const Window& window)
+{
+    m_Projection = glm::perspective(
+        glm::radians(m_FOV), (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 100.0f);
+}
+
+void Camera::UpdateProjectionMatrix(const SDL_Event& event, const Window& window)
+{
+    if (event.type == SDL_EVENT_WINDOW_RESIZED)
+    {
+        InitializeProjection(window);
+    }
+    else if (event.type == SDL_EVENT_MOUSE_WHEEL)
+    {
+        m_FOV -= event.wheel.y;
+        InitializeProjection(window);
+    }
 }
 
 void Camera::UpdatePosition(float delta)
@@ -60,6 +80,7 @@ void Camera::UpdatePosition(float delta)
 
 void Camera::UpdateLookDirection(const SDL_Event& event, float delta)
 {
+
     if (event.type != SDL_EVENT_MOUSE_MOTION)
         return;
 
@@ -78,7 +99,7 @@ void Camera::UpdateLookDirection(const SDL_Event& event, float delta)
     m_Forward = glm::normalize(direction);
 }
 
-glm::mat4 Camera::GetViewMatrix() const
+glm::mat4 Camera::CreateViewMatrix() const
 {
     return glm::lookAt(m_Position, m_Position + m_Forward, m_Up);
 }

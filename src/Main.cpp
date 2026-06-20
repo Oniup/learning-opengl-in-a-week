@@ -86,10 +86,8 @@ int main(int argc, char** argv)
     float spin_speed       = glm::radians(90.0f);
     transforms[0].Rotation = glm::vec3(0.0f, std::numbers::pi / 4, 0.0f);
 
-    glm::mat4 projection = glm::perspective(
-        glm::radians(45.0f), (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 100.0f);
-
     lgl::Camera camera(glm::vec3(7.0f, -3.0f, 5.0f), 5.0f, 0.01f);
+    camera.InitializeProjection(window);
 
     SDL_Event event;
     uint64_t last_time = SDL_GetPerformanceCounter();
@@ -108,15 +106,8 @@ int main(int argc, char** argv)
         {
             window.HandleEvents(event);
 
-            if (event.type == SDL_EVENT_WINDOW_RESIZED)
-            {
-                projection = glm::perspective(glm::radians(45.0f),
-                                              (float)window.GetWidth() / (float)window.GetHeight(),
-                                              0.1f,
-                                              100.0f);
-            }
-
             camera.UpdateLookDirection(event, delta);
+            camera.UpdateProjectionMatrix(event, window);
         }
         camera.UpdatePosition(delta);
 
@@ -124,14 +115,14 @@ int main(int argc, char** argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 view = glm::mat4(1.0f);
-        view           = camera.GetViewMatrix();
+        view           = camera.CreateViewMatrix();
 
         shader.BindTexture(bg_texture, 0);
         shader.BindTexture(fg_texture, 1);
         for (const lgl::Transform& transform : transforms)
         {
-            glm::mat4 model = transform.GetModelMatrix();
-            buffer.Draw(shader, projection, view, model);
+            glm::mat4 model = transform.CreateModelMatrix();
+            buffer.Draw(shader, camera.GetProjectionMatrix(), view, model);
         }
 
         window.SwapBuffers();

@@ -7,7 +7,7 @@
 
 namespace lgl {
 
-glm::mat4 Transform::GetModelMatrix() const
+glm::mat4 Transform::CreateModelMatrix() const
 {
     glm::mat4 model    = glm::mat4(1.0f);
     glm::mat4 rotation = glm::mat4_cast(Rotation);
