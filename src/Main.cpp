@@ -1,5 +1,6 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_timer.h>
 #include <fmt/format.h>
@@ -12,7 +13,6 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/trigonometric.hpp>
 
-#include <cstddef>
 #include <filesystem>
 #include <numbers>
 
@@ -47,6 +47,7 @@ int main(int argc, char** argv)
 {
     std::string asset_dir = GetAssetDirectory();
     lgl::Window window(800, 800);
+    bool render_wireframe_mode = false;
 
     glEnable(GL_DEPTH_TEST);
     SDL_SetWindowRelativeMouseMode(window.GetContext(), true);
@@ -57,17 +58,10 @@ int main(int argc, char** argv)
 
     lgl::Texture bg_texture(fmt::format("{}/textures/wall.jpg", asset_dir));
     lgl::Texture fg_texture(fmt::format("{}/textures/awesomeface.png", asset_dir));
+    lgl::Texture eye_texture(fmt::format("{}/textures/eyeball.png", asset_dir));
 
-    lgl::VertexBuffer buffer(true);
-    buffer.PushAttribute(0, 3, offsetof(lgl::Vertex, Position));
-    buffer.PushAttribute(1, 3, offsetof(lgl::Vertex, Color));
-    buffer.PushAttribute(2, 2, offsetof(lgl::Vertex, UV));
-    buffer.PushData(lgl::VertexBuffer_Vertex,
-                    lgl::Shapes::CubeVertices.size() * sizeof(lgl::Vertex),
-                    lgl::Shapes::CubeVertices.data());
-    buffer.PushData(lgl::VertexBuffer_Element,
-                    lgl::Shapes::CubeIndices.size() * sizeof(unsigned),
-                    lgl::Shapes::CubeIndices.data());
+    lgl::VertexBuffer buffer(lgl::ShapeMesh::GenerateSphere(12, 12));
+    // lgl::VertexBuffer buffer(lgl::ShapeMesh::GetCube());
 
     lgl::Transform transforms[] = {
         lgl::Transform{glm::vec3(0.0f, 0.0f, 0.0f)},
@@ -108,6 +102,15 @@ int main(int argc, char** argv)
 
             camera.UpdateLookDirection(event, delta);
             camera.UpdateProjectionMatrix(event, window);
+
+            if (event.type == SDL_EVENT_KEY_DOWN)
+            {
+                if (event.key.key == SDLK_ESCAPE)
+                {
+                    render_wireframe_mode = !render_wireframe_mode;
+                    glPolygonMode(GL_FRONT_AND_BACK, render_wireframe_mode ? GL_LINE : GL_FILL);
+                }
+            }
         }
         camera.UpdatePosition(delta);
 
@@ -117,8 +120,10 @@ int main(int argc, char** argv)
         glm::mat4 view = glm::mat4(1.0f);
         view           = camera.CreateViewMatrix();
 
-        shader.BindTexture(bg_texture, 0);
-        shader.BindTexture(fg_texture, 1);
+        shader.Uniform("u_TextureCount", 1);
+        shader.BindTexture(eye_texture, 0);
+        // shader.BindTexture(bg_texture, 0);
+        // shader.BindTexture(fg_texture, 1);
         for (const lgl::Transform& transform : transforms)
         {
             glm::mat4 model = transform.CreateModelMatrix();

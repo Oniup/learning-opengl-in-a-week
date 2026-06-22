@@ -22,7 +22,7 @@ public:
     ~Shader();
 
     void InitializeTextureIDs(unsigned number_of_ids = 0);
-    void Shutdown();
+    void Destroy();
 
     void Uniform(std::string_view name, float val);
     void Uniform(std::string_view name, bool val);

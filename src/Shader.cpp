@@ -92,7 +92,7 @@ Shader::Shader(std::string_view fragment, std::string_view vertex)
 
 Shader::~Shader()
 {
-    Shutdown();
+    Destroy();
 }
 
 void Shader::InitializeTextureIDs(unsigned number_of_ids)
@@ -102,14 +102,14 @@ void Shader::InitializeTextureIDs(unsigned number_of_ids)
     for (unsigned i = 0; i < number_of_ids; i++)
     {
         char name_buffer[name_buffer_size];
-        auto result = fmt::format_to_n(name_buffer, name_buffer_size, "Texture{}", i);
+        auto result = fmt::format_to_n(name_buffer, name_buffer_size, "u_Texture{}", i);
         *result.out = '\0';
         fmt::print("{}\n", name_buffer);
         glUniform1i(GetUniformLocation(name_buffer), i);
     }
 }
 
-void Shader::Shutdown()
+void Shader::Destroy()
 {
     if (m_ID != 0)
     {

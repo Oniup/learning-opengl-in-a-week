@@ -72,10 +72,10 @@ Texture::Texture(std::string_view path, TextureFilter filter)
 
 Texture::~Texture()
 {
-    Shutdown();
+    Destroy();
 }
 
-void Texture::Shutdown()
+void Texture::Destroy()
 {
     if (m_ID != 0)
     {

@@ -23,7 +23,7 @@ public:
     Texture(std::string_view path, TextureFilter filter = TextureFilter::Linear);
     ~Texture();
 
-    void Shutdown();
+    void Destroy();
 
     unsigned GetID() const { return m_ID; }
     int GetWidth() const { return m_Width; }

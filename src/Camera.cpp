@@ -80,7 +80,6 @@ void Camera::UpdatePosition(float delta)
 
 void Camera::UpdateLookDirection(const SDL_Event& event, float delta)
 {
-
     if (event.type != SDL_EVENT_MOUSE_MOTION)
         return;
 
