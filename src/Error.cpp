@@ -1,7 +1,7 @@
-#include "Error.h"
+#include "error.h"
 
-#include "fmt/color.h"
-#include "fmt/core.h"
+#include <fmt/color.h>
+#include <fmt/core.h>
 
 namespace LrnGL::err::intl {
 

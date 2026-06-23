@@ -17,14 +17,14 @@
 #include <filesystem>
 #include <numbers>
 
-#include "Camera.h"
-#include "Error.h"
-#include "Light.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "Transform.h"
-#include "VertexBuffer.h"
-#include "Window.h"
+#include "camera.h"
+#include "error.h"
+#include "light.h"
+#include "shader.h"
+#include "texture.h"
+#include "transform.h"
+#include "vertex_buffer.h"
+#include "window.h"
 
 struct Object
 {

@@ -1,17 +1,16 @@
-#include "Window.h"
+#include "window.h"
 
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_video.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_sdl3.h>
 #include <glad/gl.h>
 #include <imgui.h>
 
 #include <string_view>
 
-#include "Error.h"
-
-#include <backends/imgui_impl_opengl3.h>
-#include <backends/imgui_impl_sdl3.h>
+#include "error.h"
 
 namespace LrnGL {
 

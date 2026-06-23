@@ -16,6 +16,14 @@ struct Light
     int   SpecularShininess;
 };
 
+// struct Material
+// {
+//     vec3      Ambient;
+//     sampler2D Diffuse;
+//     sampler2D Specular;
+//     float     Shininess;
+// };
+
 out vec4 FragColor;
 
 in vec3 Color;
@@ -28,6 +36,7 @@ uniform sampler2D u_Texture0;
 uniform sampler2D u_Texture1;
 
 uniform vec3  u_CameraPosition;
+// uniform Material u_Material;
 uniform int   u_LightCount;
 uniform Light u_Lights[10];
 uniform vec3  u_AmbientColor;

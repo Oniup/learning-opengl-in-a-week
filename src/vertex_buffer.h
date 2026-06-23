@@ -6,7 +6,7 @@
 
 #include <array>
 
-#include "Shader.h"
+#include "shader.h"
 
 namespace LrnGL {
 
@@ -58,7 +58,7 @@ public:
 
     void Bind();
     void Draw(Shader& shader, const glm::mat4& projection, const glm::mat4& view,
-              const glm::mat4& model);
+              const glm::mat4& model) const;
     void Destroy();
 
 private:

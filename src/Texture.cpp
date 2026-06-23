@@ -1,15 +1,15 @@
-#include "Texture.h"
+#include "texture.h"
 
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_surface.h>
 #include <SDL3_image/SDL_image.h>
 #include <glad/gl.h>
 
-#include "Error.h"
+#include "error.h"
 
 namespace LrnGL {
 
-Texture Texture::invalid;
+Texture Texture::Invalid;
 
 Texture::Texture(std::string_view path, TextureFilter filter)
 {
@@ -75,9 +75,49 @@ Texture::~Texture()
     Destroy();
 }
 
+Texture::Texture(const Texture& texture)
+    : m_ID(texture.m_ID),
+      m_Width(texture.m_Width),
+      m_Height(texture.m_Height),
+      m_Owns(false)
+{
+}
+
+Texture::Texture(Texture&& texture)
+    : m_ID(texture.m_ID),
+      m_Width(texture.m_Width),
+      m_Height(texture.m_Height),
+      m_Owns(texture.m_Owns)
+{
+    texture.m_ID = 0;
+}
+
+Texture& Texture::operator=(const Texture& texture)
+{
+    Destroy();
+    m_ID     = texture.m_ID;
+    m_Width  = texture.m_Width;
+    m_Height = texture.m_Height;
+    m_Owns   = false;
+
+    return *this;
+}
+
+Texture& Texture::operator=(Texture&& texture)
+{
+    Destroy();
+    m_ID     = texture.m_ID;
+    m_Width  = texture.m_Width;
+    m_Height = texture.m_Height;
+    m_Owns   = texture.m_Owns;
+
+    texture.m_ID = 0;
+    return *this;
+}
+
 void Texture::Destroy()
 {
-    if (m_ID != 0)
+    if (m_ID != 0 && m_Owns)
     {
         glDeleteTextures(1, &m_ID);
         m_ID     = 0;

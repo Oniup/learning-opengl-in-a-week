@@ -8,7 +8,7 @@
 
 #include <string_view>
 
-#include "Texture.h"
+#include "texture.h"
 
 namespace LrnGL {
 

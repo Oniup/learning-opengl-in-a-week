@@ -1,10 +1,10 @@
 #pragma once
 
+#include <fmt/core.h>
+#include <fmt/std.h> // IWYU pragma: export
+
 #include <cstdio>
 #include <string_view>
-
-#include "fmt/core.h"
-#include "fmt/std.h" // IWYU pragma: export
 
 namespace LrnGL::err::intl {
 

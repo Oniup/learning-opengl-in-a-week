@@ -9,7 +9,7 @@
 #include <fstream>
 #include <string>
 
-#include "Error.h"
+#include "error.h"
 
 namespace LrnGL {
 

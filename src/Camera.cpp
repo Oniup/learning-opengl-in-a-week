@@ -11,7 +11,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
-#include "Camera.h"
+#include "camera.h"
 
 namespace LrnGL {
 

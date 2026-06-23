@@ -1,4 +1,4 @@
-#include "Light.h"
+#include "light.h"
 
 #include <fmt/base.h>
 #include <fmt/format.h>
@@ -7,8 +7,7 @@
 
 #include <algorithm>
 
-#include "Transform.h"
-#include "VertexBuffer.h"
+#include "transform.h"
 
 namespace LrnGL {
 
@@ -22,7 +21,7 @@ LightManager::LightManager(const std::string& asset_dir)
     : m_LightDebugShader(fmt::format("{}/shaders/Light.frag", asset_dir),
                          fmt::format("{}/shaders/Light.vert", asset_dir)),
       m_LightData({
-          GPULightData{.Position = glm::vec3(3.0f, 3.0f, 3.0f)},
+          LightData{.Position = glm::vec3(3.0f, 3.0f, 3.0f)},
       }),
       m_Buffer(ShapeMesh::GenerateSphere(10, 10))
 {
@@ -38,7 +37,7 @@ void LightManager::UpdateMenu()
         for (unsigned i = 0; i < m_LightData.size(); i++)
         {
             ImGui::PushID(i);
-            GPULightData& light = m_LightData[i];
+            LightData& light = m_LightData[i];
 
             const char* type = Internal::LightTypeNames[light.Type];
             if (ImGui::CollapsingHeader(type, ImGuiTreeNodeFlags_DefaultOpen))
@@ -70,7 +69,7 @@ void LightManager::UpdateMenu()
             ImGui::NewLine();
 
             if (ImGui::Button("Add Light"))
-                m_LightData.push_back(GPULightData{});
+                m_LightData.push_back(LightData{});
         }
     }
 
@@ -96,7 +95,7 @@ void LightManager::PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_po
 
     for (unsigned i = 0; i < m_LightData.size(); i++)
     {
-        const GPULightData& light = m_LightData[i];
+        const LightData& light = m_LightData[i];
 
         auto result = fmt::format_to_n(name_buffer, buffer_length, "u_Lights[{}].", i);
 
@@ -117,7 +116,7 @@ void LightManager::DrawDebugInfo(const glm::mat4& projection, const glm::mat4& v
     if (!m_RenderDebugInfo)
         return;
 
-    for (const GPULightData& light : m_LightData)
+    for (const LightData& light : m_LightData)
     {
         Transform transform{
             .Position = light.Position,

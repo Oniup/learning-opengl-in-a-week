@@ -4,7 +4,7 @@
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
 
-#include "Window.h"
+#include "window.h"
 
 namespace LrnGL {
 

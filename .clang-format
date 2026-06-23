@@ -149,7 +149,7 @@ SortIncludes: true
 IncludeBlocks: Regroup
 IncludeCategories:
     # Thirdparty libraries <glad/gl.h>
-    - Regex: "^<(imgui|glad|SDL3|SDL3_image|fmt|glm).*>"
+    - Regex: "^<(imgui|glad|SDL3|SDL3_image|fmt|glm|backends).*>"
       Priority: 1
       CaseSensitive: true
       # std library such as <vector>

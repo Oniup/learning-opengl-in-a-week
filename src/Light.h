@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "Shader.h"
-#include "VertexBuffer.h"
+#include "shader.h"
+#include "vertex_buffer.h"
 
 namespace LrnGL {
 
@@ -19,7 +19,7 @@ enum LightType : int
     LightType_Invalid,
 };
 
-struct GPULightData
+struct LightData
 {
     int       Type      = LightType_Point;
     glm::vec3 Position  = glm::vec3(0.0f);
@@ -38,17 +38,17 @@ public:
     LightManager(const std::string& asset_dir);
 
     void SetAmbientLight(glm::vec3 color);
-
     void UpdateMenu();
+
     void PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_position);
     void DrawDebugInfo(const glm::mat4& projection, const glm::mat4& view);
 
 private:
-    bool                             m_RenderDebugInfo = true;
-    Shader                           m_LightDebugShader;
-    std::vector<LrnGL::GPULightData> m_LightData;
-    glm::vec3                        m_AmbientLight = glm::vec3(0.1f);
-    VertexBuffer                     m_Buffer;
+    bool                          m_RenderDebugInfo = true;
+    Shader                        m_LightDebugShader;
+    std::vector<LrnGL::LightData> m_LightData;
+    glm::vec3                     m_AmbientLight = glm::vec3(0.1f);
+    VertexBuffer                  m_Buffer;
 };
 
 } // namespace LrnGL

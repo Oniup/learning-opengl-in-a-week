@@ -1,4 +1,4 @@
-#include "VertexBuffer.h"
+#include "vertex_buffer.h"
 
 #include <glad/gl.h>
 #include <glm/geometric.hpp>
@@ -261,7 +261,7 @@ void VertexBuffer::Bind()
 }
 
 void VertexBuffer::Draw(Shader& shader, const glm::mat4& projection, const glm::mat4& view,
-                        const glm::mat4& model)
+                        const glm::mat4& model) const
 {
     shader.Bind();
     glBindVertexArray(m_VertexArray);

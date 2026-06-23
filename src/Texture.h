@@ -17,11 +17,17 @@ enum class TextureFilter
 class Texture
 {
 public:
-    static Texture invalid;
+    static Texture Invalid;
 
     Texture() = default;
     Texture(std::string_view path, TextureFilter filter = TextureFilter::Linear);
     ~Texture();
+
+    Texture(const Texture& texture);
+    Texture(Texture&& texture);
+
+    Texture& operator=(const Texture& texture);
+    Texture& operator=(Texture&& texture);
 
     void Destroy();
 
@@ -33,6 +39,7 @@ private:
     unsigned m_ID     = 0;
     int      m_Width  = 0;
     int      m_Height = 0;
+    bool     m_Owns   = true;
 };
 
 } // namespace LrnGL

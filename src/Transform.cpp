@@ -1,4 +1,4 @@
-#include "Transform.h"
+#include "transform.h"
 
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
