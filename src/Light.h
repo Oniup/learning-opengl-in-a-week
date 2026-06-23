@@ -21,15 +21,15 @@ enum LightType : int
 
 struct GPULightData
 {
-    int Type            = LightType_Point;
+    int       Type      = LightType_Point;
     glm::vec3 Position  = glm::vec3(0.0f);
+    float     Intensity = 1.0f;
     glm::vec3 Direction = glm::vec3(1.0f, -1.0f, 1.0f);
 
-    glm::vec3 Color    = glm::vec3(1.0f);
-    glm::vec3 Ambient  = glm::vec3(0.1f);
-    glm::vec3 Specular = glm::vec3(1.0f);
-
-    static void PushToShader(Shader& shader, const std::vector<GPULightData>& light_data);
+    glm::vec3 Color             = glm::vec3(1.0f);
+    glm::vec3 Specular          = glm::vec3(1.0f);
+    float     SpecularStrength  = 1.0f;
+    int       SpecularShininess = 32;
 };
 
 class LightManager
@@ -37,15 +37,18 @@ class LightManager
 public:
     LightManager(const std::string& asset_dir);
 
+    void SetAmbientLight(glm::vec3 color);
+
     void UpdateMenu();
-    void PushLightInfoToShader(Shader& obj_shader);
+    void PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_position);
     void DrawDebugInfo(const glm::mat4& projection, const glm::mat4& view);
 
 private:
-    bool m_RenderDebugInfo = true;
-    Shader m_LightDebugShader;
+    bool                             m_RenderDebugInfo = true;
+    Shader                           m_LightDebugShader;
     std::vector<LrnGL::GPULightData> m_LightData;
-    VertexBuffer m_Buffer;
+    glm::vec3                        m_AmbientLight = glm::vec3(0.1f);
+    VertexBuffer                     m_Buffer;
 };
 
 } // namespace LrnGL

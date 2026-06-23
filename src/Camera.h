@@ -14,11 +14,11 @@ public:
     Camera(glm::vec3 position, float move_speed, float sensitivity,
            glm::vec3 look_target = glm::vec3(0.0f));
 
-    glm::vec3 GetPosition() const { return m_Position; }
-    glm::vec3 GetFoward() const { return m_Forward; }
-    glm::vec3 GetUp() const { return m_Up; }
-    float GetFOV() const { return m_FOV; }
-    float GetMoveSpeed() const { return m_MoveSpeed; }
+    glm::vec3        GetPosition() const { return m_Position; }
+    glm::vec3        GetFoward() const { return m_Forward; }
+    glm::vec3        GetUp() const { return m_Up; }
+    float            GetFOV() const { return m_FOV; }
+    float            GetMoveSpeed() const { return m_MoveSpeed; }
     const glm::mat4& GetProjectionMatrix() const { return m_Projection; }
 
     void InitializeProjection(const Window& window);
@@ -30,11 +30,11 @@ public:
     glm::mat4 CreateViewMatrix() const;
 
 private:
-    glm::vec3 m_Position = glm::vec3(0.0);
-    glm::vec3 m_Forward  = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 m_Up       = glm::vec3(0.0f, 1.0f, 0.0f);
-    float m_FOV          = 45.0f;
-    float m_MoveSpeed    = 5.0f;
+    glm::vec3 m_Position  = glm::vec3(0.0);
+    glm::vec3 m_Forward   = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 m_Up        = glm::vec3(0.0f, 1.0f, 0.0f);
+    float     m_FOV       = 45.0f;
+    float     m_MoveSpeed = 5.0f;
 
     float m_Sensitivity = 1.0f;
     float m_Pitch       = 0.0f;

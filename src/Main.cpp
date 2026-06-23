@@ -35,7 +35,7 @@ struct Object
         Floor,
     };
 
-    Type Type;
+    Type             Type;
     LrnGL::Transform Transform;
 };
 
@@ -71,16 +71,16 @@ void HandleCursorInput(LrnGL::Window& window, bool hide_mouse)
 
 int main(int argc, char** argv)
 {
-    std::string asset_dir = GetAssetDirectory();
+    std::string   asset_dir = GetAssetDirectory();
     LrnGL::Window window;
-    bool render_wireframe_mode = false;
-    bool hide_mouse            = true;
+    bool          render_wireframe_mode = false;
+    bool          hide_mouse            = true;
 
     glEnable(GL_DEPTH_TEST);
     HandleCursorInput(window, hide_mouse);
 
-    LrnGL::Shader obj_shader(fmt::format("{}/shaders/PhongF.glsl", asset_dir),
-                             fmt::format("{}/shaders/PhongV.glsl", asset_dir));
+    LrnGL::Shader obj_shader(fmt::format("{}/shaders/Phong.frag", asset_dir),
+                             fmt::format("{}/shaders/Phong.vert", asset_dir));
     obj_shader.InitializeTextureIDs(2);
 
     LrnGL::Texture bg_texture(fmt::format("{}/textures/wall.jpg", asset_dir));
@@ -113,13 +113,13 @@ int main(int argc, char** argv)
     camera.InitializeProjection(window);
 
     SDL_Event event;
-    uint64_t last_time = SDL_GetPerformanceCounter();
-    float elapsed_time = 0.0f;
+    uint64_t  last_time    = SDL_GetPerformanceCounter();
+    float     elapsed_time = 0.0f;
     while (window.IsRunning())
     {
         uint64_t current_time = SDL_GetPerformanceCounter();
-        float delta = (float)(current_time - last_time) / (float)SDL_GetPerformanceFrequency();
-        last_time   = current_time;
+        float    delta = (float)(current_time - last_time) / (float)SDL_GetPerformanceFrequency();
+        last_time      = current_time;
         elapsed_time += delta;
 
         objects[0].Transform.RotateYaw(delta);
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 
         for (const Object& object : objects)
         {
-            light_manager.PushLightInfoToShader(obj_shader);
+            light_manager.PushLightInfoToShader(obj_shader, camera.GetPosition());
             glm::mat4 model = object.Transform.CreateModelMatrix();
 
             switch (object.Type)

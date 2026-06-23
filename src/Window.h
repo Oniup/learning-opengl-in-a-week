@@ -16,9 +16,9 @@ public:
 
     void Shutdown();
 
-    int GetWidth() const;
-    int GetHeight() const;
-    void GetSize(int& width, int& height) const;
+    int         GetWidth() const;
+    int         GetHeight() const;
+    void        GetSize(int& width, int& height) const;
     SDL_Window* GetContext() const { return m_Window; }
 
     bool IsRunning();
@@ -28,8 +28,8 @@ public:
 private:
     void UpdateViewport();
 
-    bool m_Running          = true;
-    SDL_Window* m_Window    = nullptr;
+    bool          m_Running = true;
+    SDL_Window*   m_Window  = nullptr;
     SDL_GLContext m_Context = nullptr;
 };
 

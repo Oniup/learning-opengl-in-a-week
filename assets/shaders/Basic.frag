@@ -5,7 +5,7 @@ out vec4 FragColor;
 in vec3 Color;
 in vec2 TexCoords;
 
-uniform int u_TextureCount;
+uniform int       u_TextureCount;
 uniform sampler2D u_Texture0;
 uniform sampler2D u_Texture1;
 
@@ -16,7 +16,7 @@ void main()
     if (u_TextureCount > 1)
     {
         vec4 texture1 = texture(u_Texture1, TexCoords);
-        FragColor = mix(texture0, texture1, texture1.a);
+        FragColor     = mix(texture0, texture1, texture1.a);
     }
     else
         FragColor = texture(u_Texture0, TexCoords);

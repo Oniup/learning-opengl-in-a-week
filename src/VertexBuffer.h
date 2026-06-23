@@ -31,7 +31,7 @@ struct ShapeMesh
     static ShapeMesh GenerateSphere(unsigned subdivisions, unsigned height_subdivisions,
                                     glm::vec3 color = glm::vec3(1.0f));
 
-    std::vector<Vertex> Vertices;
+    std::vector<Vertex>   Vertices;
     std::vector<unsigned> Indices;
 
     bool UsesIndices() const;
@@ -64,10 +64,10 @@ public:
 private:
     VertexBuffer() = default;
 
-    unsigned m_VertexArray            = 0;
-    std::array<unsigned, 2> m_Buffers = {0, 0};
-    size_t m_BufferSize               = 0;
-    bool m_IsDynamic                  = false;
+    unsigned                m_VertexArray = 0;
+    std::array<unsigned, 2> m_Buffers     = {0, 0};
+    size_t                  m_BufferSize  = 0;
+    bool                    m_IsDynamic   = false;
 };
 
 } // namespace LrnGL

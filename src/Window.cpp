@@ -18,7 +18,7 @@ namespace LrnGL {
 static std::string_view GetSDLError()
 {
     constexpr size_t buffer_length = 1024;
-    static char buffer[buffer_length];
+    static char      buffer[buffer_length];
 
     auto result = fmt::format_to_n(buffer, buffer_length - 1, "{}", SDL_GetError());
     *result.out = '\0';
@@ -37,7 +37,7 @@ Window::Window(int width, int height)
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    SDL_DisplayID display_id            = SDL_GetPrimaryDisplay();
+    SDL_DisplayID          display_id   = SDL_GetPrimaryDisplay();
     const SDL_DisplayMode* display_mode = SDL_GetCurrentDisplayMode(display_id);
 
     if (width == 0)
@@ -132,7 +132,6 @@ bool Window::IsRunning()
 {
     if (m_Running)
     {
-
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();

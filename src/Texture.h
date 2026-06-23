@@ -26,13 +26,13 @@ public:
     void Destroy();
 
     unsigned GetID() const { return m_ID; }
-    int GetWidth() const { return m_Width; }
-    int GetHeight() const { return m_Height; }
+    int      GetWidth() const { return m_Width; }
+    int      GetHeight() const { return m_Height; }
 
 private:
-    unsigned m_ID = 0;
-    int m_Width   = 0;
-    int m_Height  = 0;
+    unsigned m_ID     = 0;
+    int      m_Width  = 0;
+    int      m_Height = 0;
 };
 
 } // namespace LrnGL
