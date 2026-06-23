@@ -13,7 +13,7 @@
 
 #include "Camera.h"
 
-namespace lgl {
+namespace LrnGL {
 
 Camera::Camera(glm::vec3 position, float move_speed, float sensitivity, glm::vec3 look_target)
     : m_Position(position),
@@ -34,13 +34,14 @@ void Camera::InitializeProjection(const Window& window)
         glm::radians(m_FOV), (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 100.0f);
 }
 
-void Camera::UpdateProjectionMatrix(const SDL_Event& event, const Window& window)
+void Camera::UpdateProjectionMatrix(bool is_hiding_mouse, const SDL_Event& event,
+                                    const Window& window)
 {
     if (event.type == SDL_EVENT_WINDOW_RESIZED)
     {
         InitializeProjection(window);
     }
-    else if (event.type == SDL_EVENT_MOUSE_WHEEL)
+    else if (is_hiding_mouse && event.type == SDL_EVENT_MOUSE_WHEEL)
     {
         m_FOV -= event.wheel.y;
         InitializeProjection(window);
@@ -78,9 +79,9 @@ void Camera::UpdatePosition(float delta)
     }
 }
 
-void Camera::UpdateLookDirection(const SDL_Event& event, float delta)
+void Camera::UpdateLookDirection(bool mouse_is_hidden, const SDL_Event& event, float delta)
 {
-    if (event.type != SDL_EVENT_MOUSE_MOTION)
+    if (!mouse_is_hidden || event.type != SDL_EVENT_MOUSE_MOTION)
         return;
 
     m_Yaw += event.motion.xrel * m_Sensitivity;
@@ -103,4 +104,4 @@ glm::mat4 Camera::CreateViewMatrix() const
     return glm::lookAt(m_Position, m_Position + m_Forward, m_Up);
 }
 
-} // namespace lgl
+} // namespace LrnGL

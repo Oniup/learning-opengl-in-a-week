@@ -6,7 +6,7 @@
 
 #include "Window.h"
 
-namespace lgl {
+namespace LrnGL {
 
 class Camera
 {
@@ -22,10 +22,10 @@ public:
     const glm::mat4& GetProjectionMatrix() const { return m_Projection; }
 
     void InitializeProjection(const Window& window);
-    void UpdateProjectionMatrix(const SDL_Event& event, const Window& window);
+    void UpdateProjectionMatrix(bool is_hiding_mouse, const SDL_Event& event, const Window& window);
 
     void UpdatePosition(float delta);
-    void UpdateLookDirection(const SDL_Event& event, float delta);
+    void UpdateLookDirection(bool mouse_is_hidden, const SDL_Event& event, float delta);
 
     glm::mat4 CreateViewMatrix() const;
 
@@ -43,4 +43,4 @@ private:
     glm::mat4 m_Projection;
 };
 
-} // namespace lgl
+} // namespace LrnGL

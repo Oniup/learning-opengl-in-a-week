@@ -8,7 +8,7 @@
 
 #include "Shader.h"
 
-namespace lgl {
+namespace LrnGL {
 
 struct Vertex
 {
@@ -70,4 +70,4 @@ private:
     bool m_IsDynamic                  = false;
 };
 
-} // namespace lgl
+} // namespace LrnGL

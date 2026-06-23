@@ -10,7 +10,7 @@
 
 #include "Texture.h"
 
-namespace lgl {
+namespace LrnGL {
 
 class Shader
 {
@@ -46,4 +46,4 @@ private:
     unsigned m_ID = 0;
 };
 
-} // namespace lgl
+} // namespace LrnGL

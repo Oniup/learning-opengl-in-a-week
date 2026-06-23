@@ -53,6 +53,7 @@ PRIVATE
     fmt::fmt
     SDL3::SDL3
     SDL3_image::SDL3_image
-    glad
     glm::glm
+    glad
+    imgui
 )

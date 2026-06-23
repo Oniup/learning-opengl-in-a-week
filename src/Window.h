@@ -6,12 +6,12 @@
 struct SDL_Window;
 typedef struct SDL_GLContextState* SDL_GLContext;
 
-namespace lgl {
+namespace LrnGL {
 
 class Window
 {
 public:
-    Window(int width, int height);
+    Window(int width = 0, int height = 0);
     ~Window();
 
     void Shutdown();
@@ -33,4 +33,4 @@ private:
     SDL_GLContext m_Context = nullptr;
 };
 
-} // namespace lgl
+} // namespace LrnGL

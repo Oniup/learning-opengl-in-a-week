@@ -6,7 +6,7 @@
 #include "fmt/core.h"
 #include "fmt/std.h" // IWYU pragma: export
 
-namespace lgl::err::intl {
+namespace LrnGL::err::intl {
 
 enum SeverityColor
 {
@@ -44,7 +44,7 @@ void OnError(SeverityColor severity, std::string_view file, std::string_view fun
     std::fflush(stderr);
 }
 
-} // namespace lgl::err::intl
+} // namespace LrnGL::err::intl
 
 // https://github.com/scottt/debugbreak/blob/master/debugbreak.h
 #ifndef NDEBUG
@@ -63,7 +63,7 @@ void OnError(SeverityColor severity, std::string_view file, std::string_view fun
     {                                                                                              \
         if (!(expression_))                                                                        \
         {                                                                                          \
-            lgl::err::intl::OnAssert(                                                              \
+            LrnGL::err::intl::OnAssert(                                                            \
                 __FILE__, __FUNCTION__, __LINE__, #expression_ __VA_OPT__(, ) __VA_ARGS__);        \
             DEBUG_BREAK;                                                                           \
             std::exit(-1);                                                                         \
@@ -80,17 +80,17 @@ void OnError(SeverityColor severity, std::string_view file, std::string_view fun
 #define FATAL(...)                                                                                 \
     do                                                                                             \
     {                                                                                              \
-        lgl::err::intl::OnError(                                                                   \
-            lgl::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__);        \
+        LrnGL::err::intl::OnError(                                                                 \
+            LrnGL::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__);      \
         DEBUG_BREAK;                                                                               \
         std::exit(-1);                                                                             \
     }                                                                                              \
     while (false)
 
 #define WARNING(...)                                                                               \
-    lgl::err::intl::OnError(                                                                       \
-        lgl::err::intl::Severity_Warning, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+    LrnGL::err::intl::OnError(                                                                     \
+        LrnGL::err::intl::Severity_Warning, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
 
 #define ERROR(...)                                                                                 \
-    lgl::err::intl::OnError(                                                                       \
-        lgl::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+    LrnGL::err::intl::OnError(                                                                     \
+        LrnGL::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)

@@ -3,7 +3,7 @@
 #include "fmt/color.h"
 #include "fmt/core.h"
 
-namespace lgl::err::intl {
+namespace LrnGL::err::intl {
 
 fmt::text_style GetSeverityColor(SeverityColor severity)
 {
@@ -39,4 +39,4 @@ void OnAssert(std::string_view file, std::string_view function, int line,
     PrintErrorHeaderMessage(Severity_Error, file, function, line, expression);
 }
 
-} // namespace lgl::err::intl
+} // namespace LrnGL::err::intl

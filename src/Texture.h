@@ -4,7 +4,7 @@
 
 #include <string_view>
 
-namespace lgl {
+namespace LrnGL {
 
 enum class TextureFilter
 {
@@ -35,4 +35,4 @@ private:
     int m_Height  = 0;
 };
 
-} // namespace lgl
+} // namespace LrnGL

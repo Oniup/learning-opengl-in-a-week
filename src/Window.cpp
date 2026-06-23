@@ -4,12 +4,16 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_video.h>
 #include <glad/gl.h>
+#include <imgui.h>
 
 #include <string_view>
 
 #include "Error.h"
 
-namespace lgl {
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_sdl3.h>
+
+namespace LrnGL {
 
 static std::string_view GetSDLError()
 {
@@ -32,6 +36,15 @@ Window::Window(int width, int height)
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    SDL_DisplayID display_id            = SDL_GetPrimaryDisplay();
+    const SDL_DisplayMode* display_mode = SDL_GetCurrentDisplayMode(display_id);
+
+    if (width == 0)
+    {
+        width  = display_mode->w / 2;
+        height = display_mode->h / 2;
+    }
 
     m_Window = SDL_CreateWindow(
         "Learning OpenGL", width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
@@ -60,6 +73,14 @@ Window::Window(int width, int height)
     fmt::print("Loaded OpenGL {}.{}\n",
                GLAD_VERSION_MAJOR(glad_version),
                GLAD_VERSION_MINOR(glad_version));
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
+
+    ImGui_ImplSDL3_InitForOpenGL(m_Window, m_Context);
+    ImGui_ImplOpenGL3_Init();
 }
 
 Window::~Window()
@@ -69,8 +90,12 @@ Window::~Window()
 
 void Window::Shutdown()
 {
-    if (SDL_WasInit(0) != 0)
+    if (m_Window)
     {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
+        ImGui::DestroyContext();
+
         if (m_Window)
             SDL_DestroyWindow(m_Window);
         if (m_Context)
@@ -105,7 +130,16 @@ void Window::GetSize(int& width, int& height) const
 
 bool Window::IsRunning()
 {
-    return m_Running;
+    if (m_Running)
+    {
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+        ImGui::NewFrame();
+
+        return true;
+    }
+    return false;
 }
 
 void Window::HandleEvents(const SDL_Event& event)
@@ -115,10 +149,15 @@ void Window::HandleEvents(const SDL_Event& event)
     case SDL_EVENT_QUIT:           m_Running = false;
     case SDL_EVENT_WINDOW_RESIZED: UpdateViewport();
     }
+
+    ImGui_ImplSDL3_ProcessEvent(&event);
 }
 
 void Window::SwapBuffers()
 {
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
     SDL_GL_SwapWindow(m_Window);
 }
 
@@ -130,4 +169,4 @@ void Window::UpdateViewport()
     glViewport(0, 0, width, height);
 }
 
-} // namespace lgl
+} // namespace LrnGL

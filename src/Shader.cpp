@@ -11,7 +11,7 @@
 
 #include "Error.h"
 
-namespace lgl {
+namespace LrnGL {
 
 static constexpr size_t info_log_size    = 1024;
 static constexpr size_t name_buffer_size = 100;
@@ -190,4 +190,4 @@ int Shader::GetUniformLocation(std::string_view name)
     return glGetUniformLocation(m_ID, name.data());
 }
 
-} // namespace lgl
+} // namespace LrnGL

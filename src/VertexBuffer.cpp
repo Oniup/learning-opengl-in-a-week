@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <numbers>
 
-namespace lgl {
+namespace LrnGL {
 
 ShapeMesh ShapeMesh::GetPlane(glm::vec3 color)
 {
@@ -286,4 +286,4 @@ void VertexBuffer::Destroy()
     }
 }
 
-} // namespace lgl
+} // namespace LrnGL

@@ -12,6 +12,7 @@
 #include <glm/ext/vector_float3.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/trigonometric.hpp>
+#include <imgui.h>
 
 #include <filesystem>
 #include <numbers>
@@ -31,10 +32,11 @@ struct Object
     {
         Eyeball,
         Box,
+        Floor,
     };
 
     Type Type;
-    lgl::Transform Transform;
+    LrnGL::Transform Transform;
 };
 
 namespace fs = std::filesystem;
@@ -56,51 +58,58 @@ std::string GetAssetDirectory(std::string_view target = "assets")
     ASSERT(false, "Failed to find working directory");
 }
 
+void HandleCursorInput(LrnGL::Window& window, bool hide_mouse)
+{
+    SDL_SetWindowRelativeMouseMode(window.GetContext(), hide_mouse);
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (hide_mouse)
+        io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+    else
+        io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+}
+
 int main(int argc, char** argv)
 {
     std::string asset_dir = GetAssetDirectory();
-    lgl::Window window(800, 800);
+    LrnGL::Window window;
     bool render_wireframe_mode = false;
+    bool hide_mouse            = true;
 
     glEnable(GL_DEPTH_TEST);
-    SDL_SetWindowRelativeMouseMode(window.GetContext(), true);
+    HandleCursorInput(window, hide_mouse);
 
-    lgl::Shader shader(fmt::format("{}/shaders/BasicF.glsl", asset_dir),
-                       fmt::format("{}/shaders/BasicV.glsl", asset_dir));
-    lgl::Shader light_shader(fmt::format("{}/shaders/LightF.glsl", asset_dir),
-                             fmt::format("{}/shaders/LightV.glsl", asset_dir));
-    shader.InitializeTextureIDs(2);
+    LrnGL::Shader obj_shader(fmt::format("{}/shaders/PhongF.glsl", asset_dir),
+                             fmt::format("{}/shaders/PhongV.glsl", asset_dir));
+    obj_shader.InitializeTextureIDs(2);
 
-    lgl::Texture bg_texture(fmt::format("{}/textures/wall.jpg", asset_dir));
-    lgl::Texture fg_texture(fmt::format("{}/textures/awesomeface.png", asset_dir));
-    lgl::Texture eye_texture(fmt::format("{}/textures/eyeball.png", asset_dir));
+    LrnGL::Texture bg_texture(fmt::format("{}/textures/wall.jpg", asset_dir));
+    LrnGL::Texture fg_texture(fmt::format("{}/textures/awesomeface.png", asset_dir));
+    LrnGL::Texture eye_texture(fmt::format("{}/textures/eyeball.png", asset_dir));
 
-    lgl::VertexBuffer eyeball_buffer(lgl::ShapeMesh::GenerateSphere(20, 20));
-    lgl::VertexBuffer box_buffer(lgl::ShapeMesh::GetCube());
+    LrnGL::VertexBuffer eyeball_buffer(LrnGL::ShapeMesh::GenerateSphere(20, 20));
+    LrnGL::VertexBuffer box_buffer(LrnGL::ShapeMesh::GetCube());
 
     Object objects[] = {
-        Object{Object::Eyeball, lgl::Transform{{0.0f, 0.0f, 0.0f}}    },
-        Object{Object::Box,     lgl::Transform{{2.0f, 5.0f, -15.0f}}  },
-        Object{Object::Eyeball, lgl::Transform{{-1.5f, -2.2f, -2.5f}} },
-        Object{Object::Box,     lgl::Transform{{-3.8f, -2.0f, -12.3f}}},
-        Object{Object::Eyeball, lgl::Transform{{2.4f, -0.4f, -3.5f}}  },
-        Object{Object::Eyeball, lgl::Transform{{-1.7f, 3.0f, -7.5f}}  },
-        Object{Object::Eyeball, lgl::Transform{{1.3f, -2.0f, -2.5f}}  },
-        Object{Object::Box,     lgl::Transform{{1.5f, 2.0f, -2.5f}}   },
-        Object{Object::Box,     lgl::Transform{{1.5f, 0.2f, -1.5f}}   },
-        Object{Object::Box,     lgl::Transform{{-1.3f, 1.0f, -1.5f}}  },
+        Object{Object::Eyeball, LrnGL::Transform{{0.0f, 0.0f, 0.0f}}    },
+        Object{Object::Box,     LrnGL::Transform{{2.0f, 5.0f, -15.0f}}  },
+        Object{Object::Eyeball, LrnGL::Transform{{-1.5f, -2.2f, -2.5f}} },
+        Object{Object::Box,     LrnGL::Transform{{-3.8f, -2.0f, -12.3f}}},
+        Object{Object::Eyeball, LrnGL::Transform{{2.4f, -0.4f, -3.5f}}  },
+        Object{Object::Eyeball, LrnGL::Transform{{-1.7f, 3.0f, -7.5f}}  },
+        Object{Object::Eyeball, LrnGL::Transform{{1.3f, -2.0f, -2.5f}}  },
+        Object{Object::Box,     LrnGL::Transform{{1.5f, 2.0f, -2.5f}}   },
+        Object{Object::Box,     LrnGL::Transform{{1.5f, 0.2f, -1.5f}}   },
+        Object{Object::Box,     LrnGL::Transform{{-1.3f, 1.0f, -1.5f}}  },
     };
 
-    lgl::LightRenderer light_renderer;
-    std::array<lgl::GPULightData, 1> light_data = {
-        lgl::GPULightData{.Position = glm::vec3(3.0f, 3.0f, 3.0f)},
-    };
+    LrnGL::LightManager light_manager(asset_dir);
 
     float move_speed              = 1.0f;
     float spin_speed              = glm::radians(90.0f);
     objects[0].Transform.Rotation = glm::vec3(0.0f, std::numbers::pi / 4, 0.0f);
 
-    lgl::Camera camera(glm::vec3(7.0f, -3.0f, 5.0f), 5.0f, 0.01f, light_data[0].Position);
+    LrnGL::Camera camera(glm::vec3(7.0f, -3.0f, 5.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
 
     SDL_Event event;
@@ -120,45 +129,57 @@ int main(int argc, char** argv)
         {
             window.HandleEvents(event);
 
-            camera.UpdateLookDirection(event, delta);
-            camera.UpdateProjectionMatrix(event, window);
+            camera.UpdateLookDirection(hide_mouse, event, delta);
+            camera.UpdateProjectionMatrix(hide_mouse, event, window);
 
             if (event.type == SDL_EVENT_KEY_DOWN)
             {
-                if (event.key.key == SDLK_ESCAPE)
+                switch (event.key.key)
                 {
+                case SDLK_F1:
                     render_wireframe_mode = !render_wireframe_mode;
                     glPolygonMode(GL_FRONT_AND_BACK, render_wireframe_mode ? GL_LINE : GL_FILL);
+                    break;
+
+                case SDLK_ESCAPE:
+                    hide_mouse = !hide_mouse;
+                    HandleCursorInput(window, hide_mouse);
+                    break;
                 }
             }
         }
         camera.UpdatePosition(delta);
+        light_manager.UpdateMenu();
 
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 view = glm::mat4(1.0f);
         view           = camera.CreateViewMatrix();
 
-        for (const lgl::GPULightData& light : light_data)
-            light_renderer.Draw(light, light_shader, camera.GetProjectionMatrix(), view);
+        light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
 
         for (const Object& object : objects)
         {
+            light_manager.PushLightInfoToShader(obj_shader);
             glm::mat4 model = object.Transform.CreateModelMatrix();
 
-            if (object.Type == Object::Eyeball)
+            switch (object.Type)
             {
-                shader.Uniform("u_TextureCount", 1);
-                shader.BindTexture(eye_texture, 0);
-                eyeball_buffer.Draw(shader, camera.GetProjectionMatrix(), view, model);
-            }
-            else
-            {
-                shader.Uniform("u_TextureCount", 2);
-                shader.BindTexture(bg_texture, 0);
-                shader.BindTexture(fg_texture, 1);
-                box_buffer.Draw(shader, camera.GetProjectionMatrix(), view, model);
+            case Object::Eyeball:
+                obj_shader.Uniform("u_TextureCount", 1);
+                obj_shader.Uniform("u_TilingFactor", glm::vec2(1.0f));
+                obj_shader.BindTexture(eye_texture, 0);
+                eyeball_buffer.Draw(obj_shader, camera.GetProjectionMatrix(), view, model);
+                break;
+            case Object::Box:
+                obj_shader.Uniform("u_TextureCount", 2);
+                obj_shader.Uniform("u_TilingFactor", glm::vec2(1.0f));
+                obj_shader.BindTexture(bg_texture, 0);
+                obj_shader.BindTexture(fg_texture, 1);
+                box_buffer.Draw(obj_shader, camera.GetProjectionMatrix(), view, model);
+                break;
+            case Object::Floor: FATAL("Not implemented yet");
             }
         }
 

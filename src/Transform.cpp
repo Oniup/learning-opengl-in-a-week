@@ -5,7 +5,7 @@
 #include <glm/ext/quaternion_float.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-namespace lgl {
+namespace LrnGL {
 
 glm::mat4 Transform::CreateModelMatrix() const
 {
@@ -71,4 +71,4 @@ void Transform::Rotate(glm::vec3 angles, bool normalize)
         Rotation = glm::normalize(Rotation);
 }
 
-} // namespace lgl
+} // namespace LrnGL

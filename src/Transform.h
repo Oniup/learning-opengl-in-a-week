@@ -4,7 +4,7 @@
 #include <glm/ext/quaternion_float.hpp>
 #include <glm/ext/vector_float3.hpp>
 
-namespace lgl {
+namespace LrnGL {
 
 struct Transform
 {
@@ -25,4 +25,4 @@ struct Transform
     void Rotate(glm::vec3 angles, bool normalize = true);
 };
 
-} // namespace lgl
+} // namespace LrnGL

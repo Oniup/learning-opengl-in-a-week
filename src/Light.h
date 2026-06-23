@@ -3,24 +3,25 @@
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
 
+#include <string>
 #include <vector>
 
 #include "Shader.h"
 #include "VertexBuffer.h"
 
-namespace lgl {
+namespace LrnGL {
 
-enum class LightType
+enum LightType : int
 {
-    Point,
-    Spot,
-    Directional,
-    Invalid,
+    LightType_Point,
+    LightType_Spot,
+    LightType_Directional,
+    LightType_Invalid,
 };
 
 struct GPULightData
 {
-    LightType type      = LightType::Point;
+    int Type            = LightType_Point;
     glm::vec3 Position  = glm::vec3(0.0f);
     glm::vec3 Direction = glm::vec3(1.0f, -1.0f, 1.0f);
 
@@ -31,16 +32,20 @@ struct GPULightData
     static void PushToShader(Shader& shader, const std::vector<GPULightData>& light_data);
 };
 
-class LightRenderer
+class LightManager
 {
 public:
-    LightRenderer();
+    LightManager(const std::string& asset_dir);
 
-    void Draw(const GPULightData& light, Shader& shader, const glm::mat4& projection,
-              const glm::mat4& view);
+    void UpdateMenu();
+    void PushLightInfoToShader(Shader& obj_shader);
+    void DrawDebugInfo(const glm::mat4& projection, const glm::mat4& view);
 
 private:
+    bool m_RenderDebugInfo = true;
+    Shader m_LightDebugShader;
+    std::vector<LrnGL::GPULightData> m_LightData;
     VertexBuffer m_Buffer;
 };
 
-} // namespace lgl
+} // namespace LrnGL

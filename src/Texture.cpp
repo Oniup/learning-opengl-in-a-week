@@ -7,7 +7,7 @@
 
 #include "Error.h"
 
-namespace lgl {
+namespace LrnGL {
 
 Texture Texture::invalid;
 
@@ -86,4 +86,4 @@ void Texture::Destroy()
     }
 }
 
-} // namespace lgl
+} // namespace LrnGL
