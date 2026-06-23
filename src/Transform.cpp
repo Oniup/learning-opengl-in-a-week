@@ -32,10 +32,6 @@ void Transform::SetEulerRoll(float angle)
     Rotation = glm::vec3(Rotation.z, Rotation.y, angle);
 }
 
-void Transform::SetRotation(glm::vec3 angles)
-{
-}
-
 void Transform::RotatePitch(float angle, bool normalize)
 {
     if (angle == 0.0f)

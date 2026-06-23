@@ -18,11 +18,24 @@
 
 #include "Camera.h"
 #include "Error.h"
+#include "Light.h"
 #include "Shader.h"
 #include "Texture.h"
 #include "Transform.h"
 #include "VertexBuffer.h"
 #include "Window.h"
+
+struct Object
+{
+    enum Type
+    {
+        Eyeball,
+        Box,
+    };
+
+    Type Type;
+    lgl::Transform Transform;
+};
 
 namespace fs = std::filesystem;
 
@@ -52,35 +65,42 @@ int main(int argc, char** argv)
     glEnable(GL_DEPTH_TEST);
     SDL_SetWindowRelativeMouseMode(window.GetContext(), true);
 
-    lgl::Shader shader(fmt::format("{}/shaders/Fragment.glsl", asset_dir),
-                       fmt::format("{}/shaders/Vertex.glsl", asset_dir));
+    lgl::Shader shader(fmt::format("{}/shaders/BasicF.glsl", asset_dir),
+                       fmt::format("{}/shaders/BasicV.glsl", asset_dir));
+    lgl::Shader light_shader(fmt::format("{}/shaders/LightF.glsl", asset_dir),
+                             fmt::format("{}/shaders/LightV.glsl", asset_dir));
     shader.InitializeTextureIDs(2);
 
     lgl::Texture bg_texture(fmt::format("{}/textures/wall.jpg", asset_dir));
     lgl::Texture fg_texture(fmt::format("{}/textures/awesomeface.png", asset_dir));
     lgl::Texture eye_texture(fmt::format("{}/textures/eyeball.png", asset_dir));
 
-    lgl::VertexBuffer buffer(lgl::ShapeMesh::GenerateSphere(12, 12));
-    // lgl::VertexBuffer buffer(lgl::ShapeMesh::GetCube());
+    lgl::VertexBuffer eyeball_buffer(lgl::ShapeMesh::GenerateSphere(20, 20));
+    lgl::VertexBuffer box_buffer(lgl::ShapeMesh::GetCube());
 
-    lgl::Transform transforms[] = {
-        lgl::Transform{glm::vec3(0.0f, 0.0f, 0.0f)},
-        lgl::Transform{glm::vec3(2.0f, 5.0f, -15.0f)},
-        lgl::Transform{glm::vec3(-1.5f, -2.2f, -2.5f)},
-        lgl::Transform{glm::vec3(-3.8f, -2.0f, -12.3f)},
-        lgl::Transform{glm::vec3(2.4f, -0.4f, -3.5f)},
-        lgl::Transform{glm::vec3(-1.7f, 3.0f, -7.5f)},
-        lgl::Transform{glm::vec3(1.3f, -2.0f, -2.5f)},
-        lgl::Transform{glm::vec3(1.5f, 2.0f, -2.5f)},
-        lgl::Transform{glm::vec3(1.5f, 0.2f, -1.5f)},
-        lgl::Transform{glm::vec3(-1.3f, 1.0f, -1.5f)},
+    Object objects[] = {
+        Object{Object::Eyeball, lgl::Transform{{0.0f, 0.0f, 0.0f}}    },
+        Object{Object::Box,     lgl::Transform{{2.0f, 5.0f, -15.0f}}  },
+        Object{Object::Eyeball, lgl::Transform{{-1.5f, -2.2f, -2.5f}} },
+        Object{Object::Box,     lgl::Transform{{-3.8f, -2.0f, -12.3f}}},
+        Object{Object::Eyeball, lgl::Transform{{2.4f, -0.4f, -3.5f}}  },
+        Object{Object::Eyeball, lgl::Transform{{-1.7f, 3.0f, -7.5f}}  },
+        Object{Object::Eyeball, lgl::Transform{{1.3f, -2.0f, -2.5f}}  },
+        Object{Object::Box,     lgl::Transform{{1.5f, 2.0f, -2.5f}}   },
+        Object{Object::Box,     lgl::Transform{{1.5f, 0.2f, -1.5f}}   },
+        Object{Object::Box,     lgl::Transform{{-1.3f, 1.0f, -1.5f}}  },
     };
 
-    float move_speed       = 1.0f;
-    float spin_speed       = glm::radians(90.0f);
-    transforms[0].Rotation = glm::vec3(0.0f, std::numbers::pi / 4, 0.0f);
+    lgl::LightRenderer light_renderer;
+    std::array<lgl::GPULightData, 1> light_data = {
+        lgl::GPULightData{.Position = glm::vec3(3.0f, 3.0f, 3.0f)},
+    };
 
-    lgl::Camera camera(glm::vec3(7.0f, -3.0f, 5.0f), 5.0f, 0.01f);
+    float move_speed              = 1.0f;
+    float spin_speed              = glm::radians(90.0f);
+    objects[0].Transform.Rotation = glm::vec3(0.0f, std::numbers::pi / 4, 0.0f);
+
+    lgl::Camera camera(glm::vec3(7.0f, -3.0f, 5.0f), 5.0f, 0.01f, light_data[0].Position);
     camera.InitializeProjection(window);
 
     SDL_Event event;
@@ -93,8 +113,8 @@ int main(int argc, char** argv)
         last_time   = current_time;
         elapsed_time += delta;
 
-        transforms[0].RotateYaw(delta);
-        transforms[0].RotatePitch(delta);
+        objects[0].Transform.RotateYaw(delta);
+        objects[0].Transform.RotatePitch(delta);
 
         while (SDL_PollEvent(&event))
         {
@@ -120,14 +140,26 @@ int main(int argc, char** argv)
         glm::mat4 view = glm::mat4(1.0f);
         view           = camera.CreateViewMatrix();
 
-        shader.Uniform("u_TextureCount", 1);
-        shader.BindTexture(eye_texture, 0);
-        // shader.BindTexture(bg_texture, 0);
-        // shader.BindTexture(fg_texture, 1);
-        for (const lgl::Transform& transform : transforms)
+        for (const lgl::GPULightData& light : light_data)
+            light_renderer.Draw(light, light_shader, camera.GetProjectionMatrix(), view);
+
+        for (const Object& object : objects)
         {
-            glm::mat4 model = transform.CreateModelMatrix();
-            buffer.Draw(shader, camera.GetProjectionMatrix(), view, model);
+            glm::mat4 model = object.Transform.CreateModelMatrix();
+
+            if (object.Type == Object::Eyeball)
+            {
+                shader.Uniform("u_TextureCount", 1);
+                shader.BindTexture(eye_texture, 0);
+                eyeball_buffer.Draw(shader, camera.GetProjectionMatrix(), view, model);
+            }
+            else
+            {
+                shader.Uniform("u_TextureCount", 2);
+                shader.BindTexture(bg_texture, 0);
+                shader.BindTexture(fg_texture, 1);
+                box_buffer.Draw(shader, camera.GetProjectionMatrix(), view, model);
+            }
         }
 
         window.SwapBuffers();

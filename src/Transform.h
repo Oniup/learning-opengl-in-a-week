@@ -18,8 +18,6 @@ struct Transform
     void SetEulerYaw(float angle);
     void SetEulerRoll(float angle);
 
-    void SetRotation(glm::vec3 angles);
-
     void RotatePitch(float angle, bool normalize = true);
     void RotateYaw(float angle, bool normalize = true);
     void RotateRoll(float angle, bool normalize = true);
