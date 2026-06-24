@@ -11,8 +11,10 @@ namespace LrnGL {
 class Camera
 {
 public:
-    Camera(glm::vec3 position, float move_speed, float sensitivity,
-           glm::vec3 look_target = glm::vec3(0.0f));
+    Camera(
+        glm::vec3 position, float move_speed, float sensitivity,
+        glm::vec3 look_target = glm::vec3(0.0f)
+    );
 
     glm::vec3        GetPosition() const { return m_Position; }
     glm::vec3        GetFoward() const { return m_Forward; }

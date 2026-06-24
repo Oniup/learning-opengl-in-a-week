@@ -16,13 +16,20 @@ struct Light
     int   SpecularShininess;
 };
 
-// struct Material
-// {
-//     vec3      Ambient;
-//     sampler2D Diffuse;
-//     sampler2D Specular;
-//     float     Shininess;
-// };
+struct Material
+{
+    vec3      Tint;
+    sampler2D Diffuse;
+    sampler2D Specular;
+    float     Shininess;
+};
+
+uniform vec3  u_CameraPosition;
+uniform int   u_LightCount;
+uniform Light u_Lights[10];
+uniform vec3  u_AmbientColor;
+
+uniform Material u_Material;
 
 out vec4 FragColor;
 
@@ -30,16 +37,6 @@ in vec3 Color;
 in vec3 Normal;
 in vec2 TexCoords;
 in vec3 FragPosition;
-
-uniform int       u_TextureCount;
-uniform sampler2D u_Texture0;
-uniform sampler2D u_Texture1;
-
-uniform vec3  u_CameraPosition;
-// uniform Material u_Material;
-uniform int   u_LightCount;
-uniform Light u_Lights[10];
-uniform vec3  u_AmbientColor;
 
 vec3 CalculateDiffuseLight(Light light, vec3 light_dir, vec3 normal)
 {
@@ -51,31 +48,30 @@ vec3 CalculateSpecularLight(Light light, vec3 light_dir, vec3 normal)
 {
     vec3  camera_dir  = normalize(u_CameraPosition - FragPosition);
     vec3  reflect_dir = reflect(-light_dir, normal);
-    float specular    = pow(max(dot(camera_dir, reflect_dir), 0.0f), light.SpecularShininess);
+    float specular    = pow(max(dot(camera_dir, reflect_dir), 0.0f), 32);
     return light.SpecularStrength * specular * light.Specular;
 }
 
 void main()
 {
-    vec4 texture_color = texture(u_Texture0, TexCoords);
-    vec3 normal        = normalize(Normal);
+    vec3 normal = normalize(Normal);
 
-    if (u_TextureCount > 1)
-    {
-        vec4 fg_texture = texture(u_Texture1, TexCoords);
-        texture_color   = mix(texture_color, fg_texture, fg_texture.a);
-    }
-
-    vec3 light_color = vec3(0.0f);
+    vec3 diffuse  = vec3(0.0f);
+    vec3 specular = vec3(0.0f);
     for (int i = 0; i < u_LightCount; i++)
     {
         vec3 light_dir = normalize(u_Lights[i].Position - FragPosition);
 
-        vec3 diffuse  = CalculateDiffuseLight(u_Lights[i], light_dir, normal);
-        vec3 specular = CalculateSpecularLight(u_Lights[i], light_dir, normal);
-
-        light_color += (diffuse + specular) * u_Lights[i].Intensity;
+        diffuse += CalculateDiffuseLight(u_Lights[i], light_dir, normal) * u_Lights[i].Intensity;
+        specular += CalculateSpecularLight(u_Lights[i], light_dir, normal) * u_Lights[i].Intensity;
     }
 
-    FragColor = texture_color * vec4(light_color + u_AmbientColor, 1.0);
+    vec4 diffuse_texture  = texture(u_Material.Diffuse, TexCoords);
+    vec4 specular_texture = texture(u_Material.Specular, TexCoords);
+
+    vec3 final_diffuse  = diffuse * diffuse_texture.rgb;
+    vec3 final_specular = specular * specular_texture.rgb;
+    vec3 final_ambient  = u_AmbientColor * diffuse_texture.rgb;
+
+    FragColor = vec4(final_diffuse + final_specular + final_ambient, diffuse_texture.a);
 }

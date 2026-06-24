@@ -97,8 +97,6 @@ void LightManager::PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_po
     {
         const LightData& light = m_LightData[i];
 
-        auto result = fmt::format_to_n(name_buffer, buffer_length, "u_Lights[{}].", i);
-
         obj_shader.Uniform(get_location(i, "Type"), light.Type);
         obj_shader.Uniform(get_location(i, "Position"), light.Position);
         obj_shader.Uniform(get_location(i, "Intensity"), light.Intensity);

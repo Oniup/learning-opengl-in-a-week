@@ -16,10 +16,12 @@
 
 #include <filesystem>
 #include <numbers>
+#include <random>
 
 #include "camera.h"
 #include "error.h"
 #include "light.h"
+#include "material.h"
 #include "shader.h"
 #include "texture.h"
 #include "transform.h"
@@ -76,31 +78,59 @@ int main(int argc, char** argv)
     bool          render_wireframe_mode = false;
     bool          hide_mouse            = true;
 
+    LrnGL::Material::LoadDefaultTexture(asset_dir);
+
     glEnable(GL_DEPTH_TEST);
     HandleCursorInput(window, hide_mouse);
 
-    LrnGL::Shader obj_shader(fmt::format("{}/shaders/Phong.frag", asset_dir),
-                             fmt::format("{}/shaders/Phong.vert", asset_dir));
-    obj_shader.InitializeTextureIDs(2);
-
-    LrnGL::Texture bg_texture(fmt::format("{}/textures/wall.jpg", asset_dir));
-    LrnGL::Texture fg_texture(fmt::format("{}/textures/awesomeface.png", asset_dir));
-    LrnGL::Texture eye_texture(fmt::format("{}/textures/eyeball.png", asset_dir));
-
-    LrnGL::VertexBuffer eyeball_buffer(LrnGL::ShapeMesh::GenerateSphere(20, 20));
-    LrnGL::VertexBuffer box_buffer(LrnGL::ShapeMesh::GetCube());
+    LrnGL::Shader shader(fmt::format("{}/shaders/Phong.frag", asset_dir),
+                         fmt::format("{}/shaders/Phong.vert", asset_dir));
+    LrnGL::Material::InitializeMaterialTextureUniforms(shader);
 
     Object objects[] = {
-        Object{Object::Eyeball, LrnGL::Transform{{0.0f, 0.0f, 0.0f}}    },
-        Object{Object::Box,     LrnGL::Transform{{2.0f, 5.0f, -15.0f}}  },
-        Object{Object::Eyeball, LrnGL::Transform{{-1.5f, -2.2f, -2.5f}} },
-        Object{Object::Box,     LrnGL::Transform{{-3.8f, -2.0f, -12.3f}}},
-        Object{Object::Eyeball, LrnGL::Transform{{2.4f, -0.4f, -3.5f}}  },
-        Object{Object::Eyeball, LrnGL::Transform{{-1.7f, 3.0f, -7.5f}}  },
-        Object{Object::Eyeball, LrnGL::Transform{{1.3f, -2.0f, -2.5f}}  },
-        Object{Object::Box,     LrnGL::Transform{{1.5f, 2.0f, -2.5f}}   },
-        Object{Object::Box,     LrnGL::Transform{{1.5f, 0.2f, -1.5f}}   },
-        Object{Object::Box,     LrnGL::Transform{{-1.3f, 1.0f, -1.5f}}  },
+        Object{Object::Eyeball, LrnGL::Transform{{0.0f, 0.0f, 0.0f}}},
+        Object{Object::Box, LrnGL::Transform{{2.0f, 5.0f, -15.0f}}},
+        Object{Object::Eyeball, LrnGL::Transform{{-1.5f, -2.2f, -2.5f}}},
+        Object{Object::Box, LrnGL::Transform{{-3.8f, -2.0f, -12.3f}}},
+        Object{Object::Eyeball, LrnGL::Transform{{2.4f, -0.4f, -3.5f}}},
+        Object{Object::Eyeball, LrnGL::Transform{{-1.7f, 3.0f, -7.5f}}},
+        Object{Object::Eyeball, LrnGL::Transform{{1.3f, -2.0f, -2.5f}}},
+        Object{Object::Box, LrnGL::Transform{{1.5f, 2.0f, -2.5f}}},
+        Object{Object::Box, LrnGL::Transform{{1.5f, 0.2f, -1.5f}}},
+        Object{Object::Box, LrnGL::Transform{{-1.3f, 1.0f, -1.5f}}},
+    };
+
+    std::random_device                    rand_device;
+    std::mt19937                          gen(rand_device());
+    std::uniform_real_distribution<float> rand_rotation(0.0f, 2 * std::numbers::pi);
+    std::uniform_real_distribution<float> rand_scale(0.5f, 2.0f);
+    for (unsigned i = 1; i < sizeof(objects) / sizeof(Object); i++)
+    {
+        Object& object = objects[i];
+
+        object.Transform.Scale = glm::vec3(rand_scale(gen), rand_scale(gen), rand_scale(gen));
+        object.Transform.Rotation =
+            glm::vec3(rand_rotation(gen), rand_rotation(gen), rand_rotation(gen));
+    }
+
+    LrnGL::Material materials[] = {
+        // Eyeball
+        LrnGL::Material{
+            .Diffuse   = LrnGL::Texture(fmt::format("{}/textures/eyeball.png", asset_dir)),
+            .Shininess = 32,
+        },
+        // Box
+        LrnGL::Material{
+            .Diffuse = LrnGL::Texture(fmt::format("{}/textures/container2.png", asset_dir)),
+            .Specular =
+                LrnGL::Texture(fmt::format("{}/textures/container2_specular.png", asset_dir)),
+            .Shininess = 128,
+        },
+    };
+
+    LrnGL::VertexBuffer vertex_buffers[] = {
+        LrnGL::VertexBuffer(LrnGL::ShapeMesh::GenerateSphere(20, 20)),
+        LrnGL::VertexBuffer((LrnGL::ShapeMesh::GetCube())),
     };
 
     LrnGL::LightManager light_manager(asset_dir);
@@ -154,37 +184,25 @@ int main(int argc, char** argv)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 view = glm::mat4(1.0f);
-        view           = camera.CreateViewMatrix();
+        glm::mat4 view_matrix = glm::mat4(1.0f);
+        view_matrix           = camera.CreateViewMatrix();
 
-        light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
+        light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view_matrix);
+        light_manager.PushLightInfoToShader(shader, camera.GetPosition());
 
         for (const Object& object : objects)
         {
-            light_manager.PushLightInfoToShader(obj_shader, camera.GetPosition());
-            glm::mat4 model = object.Transform.CreateModelMatrix();
+            glm::mat4            model_matrix = object.Transform.CreateModelMatrix();
+            LrnGL::Material&     material     = materials[object.Type];
+            LrnGL::VertexBuffer& buffer       = vertex_buffers[object.Type];
 
-            switch (object.Type)
-            {
-            case Object::Eyeball:
-                obj_shader.Uniform("u_TextureCount", 1);
-                obj_shader.Uniform("u_TilingFactor", glm::vec2(1.0f));
-                obj_shader.BindTexture(eye_texture, 0);
-                eyeball_buffer.Draw(obj_shader, camera.GetProjectionMatrix(), view, model);
-                break;
-            case Object::Box:
-                obj_shader.Uniform("u_TextureCount", 2);
-                obj_shader.Uniform("u_TilingFactor", glm::vec2(1.0f));
-                obj_shader.BindTexture(bg_texture, 0);
-                obj_shader.BindTexture(fg_texture, 1);
-                box_buffer.Draw(obj_shader, camera.GetProjectionMatrix(), view, model);
-                break;
-            case Object::Floor: FATAL("Not implemented yet");
-            }
+            material.PushInfoToShader(shader);
+            buffer.Draw(shader, camera.GetProjectionMatrix(), view_matrix, model_matrix);
         }
 
         window.SwapBuffers();
     }
 
+    LrnGL::Material::UnloadDefaultTexture();
     return 0;
 }

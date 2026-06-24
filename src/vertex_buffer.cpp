@@ -16,10 +16,10 @@ ShapeMesh ShapeMesh::GetPlane(glm::vec3 color)
     glm::vec3 color4 = color == glm::vec3(0.0f) ? glm::vec3(1.0f, 1.0f, 0.0f) : color;
 
     std::vector<Vertex> vertices = {
-        Vertex{{0.5f, 0.5f, 0.0f},   {0.0f, 0.0f, 1.0f}, color1, {1.0f, 1.0f}}, // top right
-        Vertex{{0.5f, -0.5f, 0.0f},  {0.0f, 0.0f, 1.0f}, color2, {1.0f, 0.0f}}, // bottom right
+        Vertex{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, color1, {1.0f, 1.0f}},   // top right
+        Vertex{{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, color2, {1.0f, 0.0f}},  // bottom right
         Vertex{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, color3, {0.0f, 0.0f}}, // bottom left
-        Vertex{{-0.5f, 0.5f, 0.0f},  {0.0f, 0.0f, 1.0f}, color4, {0.0f, 1.0f}}, // top left
+        Vertex{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, color4, {0.0f, 1.0f}},  // top left
     };
     std::vector<unsigned> indices = {
         // clang-format off
@@ -43,40 +43,39 @@ ShapeMesh ShapeMesh::GetCube(glm::vec3 color)
     std::vector<Vertex> vertices = {
         // Back face
         Vertex{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, color1, {0.0f, 0.0f}},
-        Vertex{{0.5f, -0.5f, -0.5f},  {0.0f, 0.0f, -1.0f}, color2, {1.0f, 0.0f}},
-        Vertex{{0.5f, 0.5f, -0.5f},   {0.0f, 0.0f, -1.0f}, color3, {1.0f, 1.0f}},
-        Vertex{{-0.5f, 0.5f, -0.5f},  {0.0f, 0.0f, -1.0f}, color4, {0.0f, 1.0f}},
+        Vertex{{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, color2, {1.0f, 0.0f}},
+        Vertex{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, color3, {1.0f, 1.0f}},
+        Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, color4, {0.0f, 1.0f}},
 
         // Front face
-        Vertex{{-0.5f, -0.5f, 0.5f},  {0.0f, 0.0f, 1.0f},  color1, {0.0f, 0.0f}},
-        Vertex{{0.5f, -0.5f, 0.5f},   {0.0f, 0.0f, 1.0f},  color2, {1.0f, 0.0f}},
-        Vertex{{0.5f, 0.5f, 0.5f},    {0.0f, 0.0f, 1.0f},  color3, {1.0f, 1.0f}},
-        Vertex{{-0.5f, 0.5f, 0.5f},   {0.0f, 0.0f, 1.0f},  color4, {0.0f, 1.0f}},
+        Vertex{{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, color1, {0.0f, 0.0f}},
+        Vertex{{0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, color2, {1.0f, 0.0f}},
+        Vertex{{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, color3, {1.0f, 1.0f}},
+        Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, color4, {0.0f, 1.0f}},
 
         // Left face
-        Vertex{{-0.5f, -0.5f, 0.5f},  {-1.0f, 0.0f, 0.0f}, color1, {0.0f, 0.0f}},
+        Vertex{{-0.5f, -0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, color1, {0.0f, 0.0f}},
         Vertex{{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, color2, {0.0f, 1.0f}},
-        Vertex{{-0.5f, 0.5f, -0.5f},  {-1.0f, 0.0f, 0.0f}, color3, {1.0f, 1.0f}},
-        Vertex{{-0.5f, 0.5f, 0.5f},   {-1.0f, 0.0f, 0.0f}, color4, {1.0f, 0.0f}},
+        Vertex{{-0.5f, 0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, color3, {1.0f, 1.0f}},
+        Vertex{{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, color4, {1.0f, 0.0f}},
 
         // Right face
-        Vertex{{0.5f, -0.5f, -0.5f},  {1.0f, 0.0f, 0.0f},  color1, {0.0f, 1.0f}},
-        Vertex{{0.5f, -0.5f, 0.5f},   {1.0f, 0.0f, 0.0f},  color2, {0.0f, 0.0f}},
-        Vertex{{0.5f, 0.5f, 0.5f},    {1.0f, 0.0f, 0.0f},  color3, {1.0f, 0.0f}},
-        Vertex{{0.5f, 0.5f, -0.5f},   {1.0f, 0.0f, 0.0f},  color4, {1.0f, 1.0f}},
+        Vertex{{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, color1, {0.0f, 1.0f}},
+        Vertex{{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, color2, {0.0f, 0.0f}},
+        Vertex{{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, color3, {1.0f, 0.0f}},
+        Vertex{{0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, color4, {1.0f, 1.0f}},
 
         // Bottom face
-        Vertex{{-0.5f, -0.5f, 0.5f},  {0.0f, -1.0f, 0.0f}, color1, {0.0f, 0.0f}},
-        Vertex{{0.5f, -0.5f, 0.5f},   {0.0f, -1.0f, 0.0f}, color2, {1.0f, 0.0f}},
-        Vertex{{0.5f, -0.5f, -0.5f},  {0.0f, -1.0f, 0.0f}, color3, {1.0f, 1.0f}},
+        Vertex{{-0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, color1, {0.0f, 0.0f}},
+        Vertex{{0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, color2, {1.0f, 0.0f}},
+        Vertex{{0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, color3, {1.0f, 1.0f}},
         Vertex{{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, color4, {0.0f, 1.0f}},
 
         // Top face
-        Vertex{{-0.5f, 0.5f, -0.5f},  {0.0f, 1.0f, 0.0f},  color1, {0.0f, 1.0f}},
-        Vertex{{0.5f, 0.5f, -0.5f},   {0.0f, 1.0f, 0.0f},  color2, {1.0f, 1.0f}},
-        Vertex{{0.5f, 0.5f, 0.5f},    {0.0f, 1.0f, 0.0f},  color3, {1.0f, 0.0f}},
-        Vertex{{-0.5f, 0.5f, 0.5f},   {0.0f, 1.0f, 0.0f},  color4, {0.0f, 0.0f}}
-    };
+        Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, color1, {0.0f, 1.0f}},
+        Vertex{{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, color2, {1.0f, 1.0f}},
+        Vertex{{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, color3, {1.0f, 0.0f}},
+        Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, color4, {0.0f, 0.0f}}};
 
     // clang-format off
         std::vector<unsigned> indices = {

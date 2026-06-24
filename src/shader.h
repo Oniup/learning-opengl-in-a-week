@@ -21,7 +21,6 @@ public:
     Shader(std::string_view fragment, std::string_view vertex);
     ~Shader();
 
-    void InitializeTextureIDs(unsigned number_of_ids = 0);
     void Destroy();
 
     void Uniform(std::string_view name, float val);
@@ -34,9 +33,9 @@ public:
     void Uniform(std::string_view name, glm::vec2 val);
     void Uniform(std::string_view name, const glm::mat4& val);
     void Uniform(std::string_view name, const glm::mat3& val);
+    void Uniform(const Texture& texture, unsigned id);
 
     void Bind();
-    void BindTexture(const Texture& texture, unsigned id);
 
     unsigned GetID() const { return m_ID; }
 

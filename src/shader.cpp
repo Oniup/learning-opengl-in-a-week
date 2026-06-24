@@ -95,20 +95,6 @@ Shader::~Shader()
     Destroy();
 }
 
-void Shader::InitializeTextureIDs(unsigned number_of_ids)
-{
-    glUseProgram(m_ID);
-
-    for (unsigned i = 0; i < number_of_ids; i++)
-    {
-        char name_buffer[name_buffer_size];
-        auto result = fmt::format_to_n(name_buffer, name_buffer_size, "u_Texture{}", i);
-        *result.out = '\0';
-        fmt::print("{}\n", name_buffer);
-        glUniform1i(GetUniformLocation(name_buffer), i);
-    }
-}
-
 void Shader::Destroy()
 {
     if (m_ID != 0)
@@ -177,7 +163,7 @@ void Shader::Bind()
     glUseProgram(m_ID);
 }
 
-void Shader::BindTexture(const Texture& texture, unsigned id)
+void Shader::Uniform(const Texture& texture, unsigned id)
 {
     glUseProgram(m_ID);
     glActiveTexture(GL_TEXTURE0 + id);

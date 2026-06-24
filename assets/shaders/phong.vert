@@ -14,7 +14,7 @@ uniform mat4 u_Projection;
 uniform mat4 u_View;
 uniform mat4 u_Model;
 
-uniform vec2 u_TilingFactor;
+uniform vec2 u_Material_TilingFactor;
 
 void main()
 {
@@ -23,6 +23,6 @@ void main()
 
     Color        = a_Color;
     Normal       = mat3(transpose(inverse(u_Model))) * a_Normal;
-    TexCoords    = a_TexCoords * u_TilingFactor;
-    FragPosition = vec3(u_View * u_View * position);
+    TexCoords    = a_TexCoords * u_Material_TilingFactor;
+    FragPosition = vec3(u_Model * position);
 }

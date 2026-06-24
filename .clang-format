@@ -2,11 +2,11 @@
 Language: Cpp
 AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
-AlignArrayOfStructures: Left
+AlignArrayOfStructures: None
 AlignConsecutiveAssignments:
     Enabled: true
     AcrossEmptyLines: false
-    AcrossComments: true
+    AcrossComments: false
     AlignCompound: false
     AlignFunctionDeclarations: false
     AlignFunctionPointers: true
@@ -22,7 +22,7 @@ AlignConsecutiveBitFields:
 AlignConsecutiveDeclarations:
     Enabled: true
     AcrossEmptyLines: false
-    AcrossComments: true
+    AcrossComments: false
     AlignCompound: false
     AlignFunctionDeclarations: true
     AlignFunctionPointers: false
