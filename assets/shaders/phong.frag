@@ -13,10 +13,12 @@ struct Light
     vec3  Direction;
     float Intensity;
 
-    vec3  Color;
-    vec3  Specular;
-    float SpecularStrength;
-    int   SpecularShininess;
+    float Constant;
+    float Linear;
+    float Quadratic;
+
+    vec3 Color;
+    vec3 Specular;
 };
 
 struct MaterialColorInput
@@ -49,23 +51,26 @@ in vec3 Normal;
 in vec2 TexCoords;
 in vec3 FragPosition;
 
-vec3 CalculateDiffuseLight(Light light, vec3 light_dir, vec3 normal)
+vec3 CalculateDiffuseLight(Light light, vec3 light_direction, vec3 normal)
 {
-    float diffuse = max(dot(normal, light_dir), 0.0f);
+    float diffuse = max(dot(normal, light_direction), 0.0f);
     return diffuse * light.Color;
 }
 
-vec3 CalculateSpecularLight(Light light, vec3 light_dir, vec3 normal)
+vec3 CalculateSpecularLight(Light light, vec3 light_direction, vec3 normal)
 {
-    vec3  camera_dir  = normalize(u_CameraPosition - FragPosition);
-    vec3  reflect_dir = reflect(-light_dir, normal);
-    float specular    = pow(max(dot(camera_dir, reflect_dir), 0.0f), 32);
-    return light.SpecularStrength * specular * light.Specular;
+    vec3  camera_direction  = normalize(u_CameraPosition - FragPosition);
+    vec3  reflect_direction = reflect(-light_direction, normal);
+    float specular          = pow(max(dot(camera_direction, reflect_direction), 0.0f), 32);
+    return specular * light.Specular;
 }
 
-float LengthSq(vec3 vec)
+float CalculateAttenuation(Light light)
 {
-    return dot(vec, vec);
+    float distance = length(light.Position - FragPosition);
+    float denominator =
+        (light.Quadratic * distance * distance) + (light.Linear * distance) + light.Constant;
+    return 1.0 / denominator;
 }
 
 void main()
@@ -78,16 +83,26 @@ void main()
     {
         Light light = u_Lights[i];
 
-        vec3 light_dir = vec3(0.0f);
+        vec3  direction   = vec3(0.0f);
+        float attenuation = 0.0f;
         switch (light.Type)
         {
-        case LIGHT_TYPE_POINT:       light_dir = normalize(light.Position - FragPosition); break;
+        case LIGHT_TYPE_POINT:
+            direction   = normalize(light.Position - FragPosition);
+            attenuation = light.Intensity * CalculateAttenuation(light);
+            break;
         case LIGHT_TYPE_SPOT:
-        case LIGHT_TYPE_DIRECTIONAL: light_dir = normalize(-light.Direction); break;
+            direction   = normalize(light.Position - FragPosition);
+            attenuation = light.Intensity * CalculateAttenuation(light);
+            break;
+        case LIGHT_TYPE_DIRECTIONAL:
+            direction   = normalize(-light.Direction);
+            attenuation = light.Intensity;
+            break;
         }
 
-        diffuse_light += CalculateDiffuseLight(light, light_dir, normal) * light.Intensity;
-        specular_light += CalculateSpecularLight(light, light_dir, normal) * light.Intensity;
+        diffuse_light += CalculateDiffuseLight(light, direction, normal) * attenuation;
+        specular_light += CalculateSpecularLight(light, direction, normal) * attenuation;
     }
 
     vec4 diffuse_texture  = texture(u_Material.Diffuse.Image, TexCoords);

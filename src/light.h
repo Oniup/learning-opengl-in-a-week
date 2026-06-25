@@ -26,10 +26,12 @@ struct LightData
     glm::vec3 Direction = glm::vec3(1.0f, -1.0f, 1.0f);
     float     Intensity = 1.0f;
 
-    glm::vec3 Color             = glm::vec3(1.0f);
-    glm::vec3 Specular          = glm::vec3(1.0f);
-    float     SpecularStrength  = 1.0f;
-    int       SpecularShininess = 32;
+    float Constant  = 1.0f;
+    float Linear    = 0.14f;
+    float Quadratic = 0.07f;
+
+    glm::vec3 Color    = glm::vec3(1.0f);
+    glm::vec3 Specular = glm::vec3(1.0f);
 };
 
 class LightManager
@@ -38,12 +40,16 @@ public:
     LightManager(const std::string& asset_dir);
 
     void SetAmbientLight(glm::vec3 color);
-    void UpdateMenu();
+    void EditLightPropertiesMenu();
 
     void PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_position);
     void DrawDebugInfo(const glm::mat4& projection, const glm::mat4& view);
 
 private:
+    void EditLightProperties(LightData& light);
+    void EditLightAttenuationProperties(LightData& light);
+    void EditLightColor(LightData& light);
+
     bool                          m_RenderDebugInfo = true;
     Shader                        m_LightDebugShader;
     std::vector<LrnGL::LightData> m_LightData;
