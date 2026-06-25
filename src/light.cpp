@@ -45,10 +45,16 @@ void LightManager::SetGlobalAmbientLight(glm::vec3 color)
     m_GlobalAmbientLight = color;
 }
 
-LightData* LightManager::PushLight(LightData&& light)
+void LightManager::PushLight(LightData&& light)
 {
     m_LightData.push_back(std::move(light));
-    return &m_LightData.back();
+}
+
+LightData* LightManager::GetLight(unsigned index)
+{
+    if (index < m_LightData.size())
+        return &m_LightData[index];
+    return nullptr;
 }
 
 void LightManager::EditLightPropertiesMenu()
@@ -173,10 +179,10 @@ void LightManager::EditLightProperties(LightData& light)
         ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
         ImGui::SliderFloat("Cut Off", &light.SpotCutOff, 0.0f, 90.0f);
         ImGui::SliderFloat("Outer Cut Off", &light.SpotOuterCutOff, 0.0f, 90.0f);
-        ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction));
+        ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction), 0.1f, -1.0f, 1.0f);
         break;
     case LightData::Directional:
-        ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction));
+        ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction), 0.1f, -1.0f, 1.0f);
         break;
     }
 

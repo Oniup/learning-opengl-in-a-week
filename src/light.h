@@ -46,7 +46,8 @@ class LightManager
 public:
     LightManager(const std::string& asset_dir);
 
-    LightData* PushLight(LightData&& light);
+    void       PushLight(LightData&& light);
+    LightData* GetLight(unsigned index);
 
     void SetGlobalAmbientLight(glm::vec3 color);
     void EditLightPropertiesMenu();

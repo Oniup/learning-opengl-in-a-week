@@ -8,6 +8,8 @@
 
 #include <algorithm>
 #include <cmath>
+
+#include "scenes/scenes.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
@@ -50,6 +52,9 @@ void Camera::UpdateProjectionMatrix(bool is_hiding_mouse, const SDL_Event& event
 
 void Camera::UpdatePosition(float delta)
 {
+    if (!IsMouseHidden())
+        return;
+
     const bool* keyboard = SDL_GetKeyboardState(nullptr);
 
     glm::vec3 right = glm::cross(m_Forward, m_Up);
