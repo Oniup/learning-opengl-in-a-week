@@ -152,9 +152,9 @@ int main(int argc, char** argv)
     while (window.IsRunning())
     {
         uint64_t current_time = SDL_GetPerformanceCounter();
-        float    delta = (float)(current_time - last_time) / (float)SDL_GetPerformanceFrequency();
-        last_time      = current_time;
-        elapsed_time += delta;
+        float    delta  = (float)(current_time - last_time) / (float)SDL_GetPerformanceFrequency();
+        last_time       = current_time;
+        elapsed_time   += delta;
 
         objects[0].Transform.RotatePitch(delta * 1.5f);
         objects[0].Transform.RotateYaw(delta * 2.0f);

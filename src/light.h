@@ -21,6 +21,8 @@ enum LightType : int
 
 struct LightData
 {
+    static constexpr float DefaultAmbientMultiplier = 0.1f;
+
     int       Type      = LightType_Point;
     glm::vec3 Position  = glm::vec3(0.0f);
     glm::vec3 Direction = glm::vec3(1.0f, -1.0f, 1.0f);
@@ -31,6 +33,7 @@ struct LightData
     float Quadratic = 0.07f;
 
     glm::vec3 Color    = glm::vec3(1.0f);
+    glm::vec3 Ambient  = glm::vec3(0.0f);
     glm::vec3 Specular = glm::vec3(1.0f);
 };
 
@@ -39,7 +42,7 @@ class LightManager
 public:
     LightManager(const std::string& asset_dir);
 
-    void SetAmbientLight(glm::vec3 color);
+    void SetGlobalAmbientLight(glm::vec3 color);
     void EditLightPropertiesMenu();
 
     void PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_position);
@@ -52,8 +55,8 @@ private:
 
     bool                          m_RenderDebugInfo = true;
     Shader                        m_LightDebugShader;
+    glm::vec3                     m_GlobalAmbientLight = glm::vec3(0.07f);
     std::vector<LrnGL::LightData> m_LightData;
-    glm::vec3                     m_AmbientLight = glm::vec3(0.1f);
     VertexBuffer                  m_Buffer;
 };
 

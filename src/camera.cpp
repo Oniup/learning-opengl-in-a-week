@@ -74,7 +74,7 @@ void Camera::UpdatePosition(float delta)
         float move_speed = m_MoveSpeed;
         if (keyboard[SDL_SCANCODE_LSHIFT])
             move_speed *= 2;
-        move_dir = glm::normalize(move_dir);
+        move_dir    = glm::normalize(move_dir);
         m_Position += move_dir * move_speed * delta;
     }
 }
@@ -84,9 +84,9 @@ void Camera::UpdateLookDirection(bool mouse_is_hidden, const SDL_Event& event, f
     if (!mouse_is_hidden || event.type != SDL_EVENT_MOUSE_MOTION)
         return;
 
-    m_Yaw += event.motion.xrel * m_Sensitivity;
+    m_Yaw   += event.motion.xrel * m_Sensitivity;
     m_Pitch -= event.motion.yrel * m_Sensitivity;
-    m_Pitch = std::clamp(m_Pitch, -89.0f, 89.0f);
+    m_Pitch  = std::clamp(m_Pitch, -89.0f, 89.0f);
 
     float radYaw   = glm::radians(m_Yaw);
     float radPitch = glm::radians(m_Pitch);

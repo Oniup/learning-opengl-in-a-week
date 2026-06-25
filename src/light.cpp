@@ -44,6 +44,11 @@ LightManager::LightManager(const std::string& asset_dir)
 {
 }
 
+void LightManager::SetGlobalAmbientLight(glm::vec3 color)
+{
+    m_GlobalAmbientLight = color;
+}
+
 void LightManager::EditLightPropertiesMenu()
 {
     ImGui::Begin("Light Control");
@@ -84,11 +89,11 @@ void LightManager::EditLightPropertiesMenu()
     ImGui::End();
 }
 
-void LightManager::PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_position)
+void LightManager::PushLightInfoToShader(Shader& shader, glm::vec3 camera_position)
 {
-    obj_shader.Uniform("u_LightCount", static_cast<int>(m_LightData.size()));
-    obj_shader.Uniform("u_CameraPosition", camera_position);
-    obj_shader.Uniform("u_AmbientColor", m_AmbientLight);
+    shader.Uniform("u_LightCount", static_cast<int>(m_LightData.size()));
+    shader.Uniform("u_CameraPosition", camera_position);
+    shader.Uniform("u_GlobalAmbientLight", m_GlobalAmbientLight);
 
     size_t buffer_length = 50;
     char   name_buffer[buffer_length];
@@ -105,17 +110,21 @@ void LightManager::PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_po
     {
         const LightData& light = m_LightData[i];
 
-        obj_shader.Uniform(get_location(i, "Type"), light.Type);
-        obj_shader.Uniform(get_location(i, "Position"), light.Position);
-        obj_shader.Uniform(get_location(i, "Direction"), light.Direction);
-        obj_shader.Uniform(get_location(i, "Intensity"), light.Intensity);
+        shader.Uniform(get_location(i, "Type"), light.Type);
+        shader.Uniform(get_location(i, "Position"), light.Position);
+        shader.Uniform(get_location(i, "Direction"), light.Direction);
+        shader.Uniform(get_location(i, "Intensity"), light.Intensity);
 
-        obj_shader.Uniform(get_location(i, "Intensity"), light.Constant);
-        obj_shader.Uniform(get_location(i, "Linear"), light.Linear);
-        obj_shader.Uniform(get_location(i, "Quadratic"), light.Quadratic);
+        shader.Uniform(get_location(i, "Intensity"), light.Constant);
+        shader.Uniform(get_location(i, "Linear"), light.Linear);
+        shader.Uniform(get_location(i, "Quadratic"), light.Quadratic);
 
-        obj_shader.Uniform(get_location(i, "Color"), light.Color);
-        obj_shader.Uniform(get_location(i, "Specular"), light.Specular);
+        shader.Uniform(get_location(i, "Color"), light.Color);
+        shader.Uniform(get_location(i, "Ambient"),
+                       light.Ambient == glm::vec3(0.0f)
+                           ? light.Color * LightData::DefaultAmbientMultiplier
+                           : light.Ambient);
+        shader.Uniform(get_location(i, "Specular"), light.Specular);
     }
 }
 
@@ -214,6 +223,7 @@ void LightManager::EditLightColor(LightData& light)
 {
     ImGui::SeparatorText("Light Color");
     ImGui::ColorEdit3("Color", glm::value_ptr(light.Color));
+    ImGui::ColorEdit3("Ambient", glm::value_ptr(light.Ambient));
     ImGui::ColorEdit3("Specular", glm::value_ptr(light.Specular));
 }
 

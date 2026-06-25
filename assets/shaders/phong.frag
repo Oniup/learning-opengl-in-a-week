@@ -18,6 +18,7 @@ struct Light
     float Quadratic;
 
     vec3 Color;
+    vec3 Ambient;
     vec3 Specular;
 };
 
@@ -39,7 +40,7 @@ struct Material
 uniform vec3  u_CameraPosition;
 uniform int   u_LightCount;
 uniform Light u_Lights[10];
-uniform vec3  u_AmbientColor;
+uniform vec3  u_GlobalAmbientLight;
 
 // Other
 uniform Material u_Material;
@@ -79,6 +80,7 @@ void main()
 
     vec3 diffuse_light  = vec3(0.0f);
     vec3 specular_light = vec3(0.0f);
+    vec3 ambient_light  = u_GlobalAmbientLight;
     for (int i = 0; i < u_LightCount; i++)
     {
         Light light = u_Lights[i];
@@ -101,8 +103,9 @@ void main()
             break;
         }
 
-        diffuse_light += CalculateDiffuseLight(light, direction, normal) * attenuation;
+        diffuse_light  += CalculateDiffuseLight(light, direction, normal) * attenuation;
         specular_light += CalculateSpecularLight(light, direction, normal) * attenuation;
+        ambient_light  += light.Ambient * attenuation;
     }
 
     vec4 diffuse_texture  = texture(u_Material.Diffuse.Image, TexCoords);
@@ -114,7 +117,7 @@ void main()
     vec3 diffuse  = diffuse_light * diffuse_texture.rgb * u_Material.Diffuse.Color;
     vec3 specular = specular_light * specular_texture.rgb * u_Material.Specular.Color;
     vec3 emission = emission_texture.rgb * u_Material.Emission.Color * emission_pulse;
-    vec3 ambient  = u_AmbientColor * diffuse_texture.rgb;
+    vec3 ambient  = ambient_light * diffuse_texture.rgb;
 
     if (specular_texture.rgb != vec3(0.0))
         emission = vec3(0.0);
