@@ -2,6 +2,7 @@
 
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
+#include <glm/trigonometric.hpp>
 
 #include <string>
 #include <vector>
@@ -11,36 +12,41 @@
 
 namespace LrnGL {
 
-enum LightType : int
-{
-    LightType_Point,
-    LightType_Spot,
-    LightType_Directional,
-    LightType_Invalid,
-};
-
 struct LightData
 {
+    enum Type : int
+    {
+        Point,
+        Spot,
+        Directional,
+    };
+
     static constexpr float DefaultAmbientMultiplier = 0.1f;
 
-    int       Type      = LightType_Point;
+    int       Type      = LightData::Point;
     glm::vec3 Position  = glm::vec3(0.0f);
     glm::vec3 Direction = glm::vec3(1.0f, -1.0f, 1.0f);
     float     Intensity = 1.0f;
 
-    float Constant  = 1.0f;
-    float Linear    = 0.14f;
-    float Quadratic = 0.07f;
+    float Constant        = 1.0f;
+    float Linear          = 0.14f;
+    float Quadratic       = 0.07f;
+    float SpotCutOff      = 7.0f;
+    float SpotOuterCutOff = 7.0f;
 
     glm::vec3 Color    = glm::vec3(1.0f);
     glm::vec3 Ambient  = glm::vec3(0.0f);
     glm::vec3 Specular = glm::vec3(1.0f);
+
+    bool ShowDebugVisual = true;
 };
 
 class LightManager
 {
 public:
     LightManager(const std::string& asset_dir);
+
+    LightData* PushLight(LightData&& light);
 
     void SetGlobalAmbientLight(glm::vec3 color);
     void EditLightPropertiesMenu();

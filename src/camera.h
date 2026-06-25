@@ -15,7 +15,7 @@ public:
            glm::vec3 look_target = glm::vec3(0.0f));
 
     glm::vec3        GetPosition() const { return m_Position; }
-    glm::vec3        GetFoward() const { return m_Forward; }
+    glm::vec3        GetForward() const { return m_Forward; }
     glm::vec3        GetUp() const { return m_Up; }
     float            GetFOV() const { return m_FOV; }
     float            GetMoveSpeed() const { return m_MoveSpeed; }

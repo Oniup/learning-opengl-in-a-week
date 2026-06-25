@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <tuple>
 
-#include "error.h"
 #include "transform.h"
 
 namespace LrnGL {
@@ -37,9 +36,6 @@ namespace Internal {
 LightManager::LightManager(const std::string& asset_dir)
     : m_LightDebugShader(fmt::format("{}/shaders/Light.frag", asset_dir),
                          fmt::format("{}/shaders/Light.vert", asset_dir)),
-      m_LightData({
-          LightData{.Position = glm::vec3(3.0f, 3.0f, 3.0f)},
-      }),
       m_Buffer(ShapeMesh::GenerateSphere(10, 10))
 {
 }
@@ -47,6 +43,12 @@ LightManager::LightManager(const std::string& asset_dir)
 void LightManager::SetGlobalAmbientLight(glm::vec3 color)
 {
     m_GlobalAmbientLight = color;
+}
+
+LightData* LightManager::PushLight(LightData&& light)
+{
+    m_LightData.push_back(std::move(light));
+    return &m_LightData.back();
 }
 
 void LightManager::EditLightPropertiesMenu()
@@ -115,9 +117,13 @@ void LightManager::PushLightInfoToShader(Shader& shader, glm::vec3 camera_positi
         shader.Uniform(get_location(i, "Direction"), light.Direction);
         shader.Uniform(get_location(i, "Intensity"), light.Intensity);
 
-        shader.Uniform(get_location(i, "Intensity"), light.Constant);
+        shader.Uniform(get_location(i, "Constant"), light.Constant);
         shader.Uniform(get_location(i, "Linear"), light.Linear);
         shader.Uniform(get_location(i, "Quadratic"), light.Quadratic);
+
+        shader.Uniform(get_location(i, "SpotCutOff"), std::cos(glm::radians(light.SpotCutOff)));
+        shader.Uniform(get_location(i, "SpotOuterCutOff"),
+                       std::cos(glm::radians(light.SpotCutOff + light.SpotOuterCutOff)));
 
         shader.Uniform(get_location(i, "Color"), light.Color);
         shader.Uniform(get_location(i, "Ambient"),
@@ -135,7 +141,7 @@ void LightManager::DrawDebugInfo(const glm::mat4& projection, const glm::mat4& v
 
     for (const LightData& light : m_LightData)
     {
-        if (light.Type == LightType_Directional)
+        if (light.Type == LightData::Directional || !light.ShowDebugVisual)
             continue;
 
         Transform transform{
@@ -155,18 +161,23 @@ void LightManager::EditLightProperties(LightData& light)
         "Type", &light.Type, Internal::LightTypeNames.data(), Internal::LightTypeNames.size());
 
     ImGui::SeparatorText("Properties");
+    ImGui::Checkbox("Show debug visual", &light.ShowDebugVisual);
     ImGui::DragFloat("Intensity", &light.Intensity, 0.1f);
 
     switch (light.Type)
     {
-    case LightType_Point:
+    case LightData::Point:
         ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
         break;
-    case LightType_Spot: ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f); break;
-    case LightType_Directional:
+    case LightData::Spot:
+        ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
+        ImGui::SliderFloat("Cut Off", &light.SpotCutOff, 0.0f, 90.0f);
+        ImGui::SliderFloat("Outer Cut Off", &light.SpotOuterCutOff, 0.0f, 90.0f);
         ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction));
         break;
-    default: FATAL("This should never be called");
+    case LightData::Directional:
+        ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction));
+        break;
     }
 
     light.Intensity = std::max(light.Intensity, 0.0f);

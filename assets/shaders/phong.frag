@@ -16,6 +16,8 @@ struct Light
     float Constant;
     float Linear;
     float Quadratic;
+    float SpotCutOff;
+    float SpotOuterCutOff;
 
     vec3 Color;
     vec3 Ambient;
@@ -87,20 +89,29 @@ void main()
 
         vec3  direction   = vec3(0.0f);
         float attenuation = 0.0f;
+
         switch (light.Type)
         {
-        case LIGHT_TYPE_POINT:
+        case LIGHT_TYPE_POINT: {
             direction   = normalize(light.Position - FragPosition);
             attenuation = light.Intensity * CalculateAttenuation(light);
-            break;
-        case LIGHT_TYPE_SPOT:
-            direction   = normalize(light.Position - FragPosition);
-            attenuation = light.Intensity * CalculateAttenuation(light);
-            break;
-        case LIGHT_TYPE_DIRECTIONAL:
+        }
+        break;
+        case LIGHT_TYPE_SPOT: {
+            direction = normalize(light.Position - FragPosition);
+
+            float theta     = dot(direction, normalize(-light.Direction));
+            float epsilon   = light.SpotCutOff - light.SpotOuterCutOff;
+            float intensity = clamp((theta - light.SpotOuterCutOff) / epsilon, 0.0, 1.0);
+
+            attenuation = light.Intensity * intensity * CalculateAttenuation(light);
+        }
+        break;
+        case LIGHT_TYPE_DIRECTIONAL: {
             direction   = normalize(-light.Direction);
             attenuation = light.Intensity;
-            break;
+        }
+        break;
         }
 
         diffuse_light  += CalculateDiffuseLight(light, direction, normal) * attenuation;

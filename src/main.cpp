@@ -71,6 +71,11 @@ void HandleCursorInput(LrnGL::Window& window, bool hide_mouse)
         io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
 }
 
+glm::vec3 RGBToNormalized(unsigned r, unsigned g, unsigned b)
+{
+    return glm::vec3((float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f);
+}
+
 int main(int argc, char** argv)
 {
     std::string   asset_dir = GetAssetDirectory();
@@ -138,6 +143,10 @@ int main(int argc, char** argv)
     };
 
     LrnGL::LightManager light_manager(asset_dir);
+    light_manager.PushLight(LrnGL::LightData{
+        .Position = glm::vec3(3.0f, 3.0f, 3.0f),
+        .Color    = RGBToNormalized(215, 188, 133),
+    });
 
     float move_speed              = 1.0f;
     float spin_speed              = glm::radians(90.0f);
@@ -145,6 +154,14 @@ int main(int argc, char** argv)
 
     LrnGL::Camera camera(glm::vec3(7.0f, -3.0f, 5.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
+
+    LrnGL::LightData* camera_spot_light = light_manager.PushLight(LrnGL::LightData{
+        .Type            = LrnGL::LightData::Spot,
+        .Position        = glm::vec3(3.0f, 3.0f, 3.0f),
+        .Linear          = 0.07f,
+        .Quadratic       = 0.017f,
+        .ShowDebugVisual = false,
+    });
 
     SDL_Event event;
     uint64_t  last_time    = SDL_GetPerformanceCounter();
@@ -185,6 +202,9 @@ int main(int argc, char** argv)
         }
         camera.UpdatePosition(delta);
         light_manager.EditLightPropertiesMenu();
+
+        camera_spot_light->Position  = camera.GetPosition();
+        camera_spot_light->Direction = camera.GetForward();
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
