@@ -7,6 +7,7 @@
 
 #include <algorithm>
 
+#include "error.h"
 #include "transform.h"
 
 namespace LrnGL {
@@ -47,9 +48,22 @@ void LightManager::UpdateMenu()
                              Internal::LightTypeNames.data(),
                              Internal::LightTypeNames.size());
 
-                ImGui::SeparatorText("Position and Intensity");
-                ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
+                ImGui::SeparatorText("Properties");
                 ImGui::DragFloat("Intensity", &light.Intensity, 0.1f);
+
+                switch (light.Type)
+                {
+                case LightType_Point:
+                    ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
+                    break;
+                case LightType_Spot:
+                    ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
+                    break;
+                case LightType_Directional:
+                    ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction));
+                    break;
+                default: FATAL("This should never be called");
+                }
 
                 ImGui::SeparatorText("Light Color");
                 ImGui::ColorEdit3("Color", glm::value_ptr(light.Color));
@@ -99,6 +113,7 @@ void LightManager::PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_po
 
         obj_shader.Uniform(get_location(i, "Type"), light.Type);
         obj_shader.Uniform(get_location(i, "Position"), light.Position);
+        obj_shader.Uniform(get_location(i, "Direction"), light.Direction);
         obj_shader.Uniform(get_location(i, "Intensity"), light.Intensity);
 
         obj_shader.Uniform(get_location(i, "Color"), light.Color);
@@ -116,6 +131,9 @@ void LightManager::DrawDebugInfo(const glm::mat4& projection, const glm::mat4& v
 
     for (const LightData& light : m_LightData)
     {
+        if (light.Type == LightType_Directional)
+            continue;
+
         Transform transform{
             .Position = light.Position,
             .Scale    = glm::vec3(0.1f),

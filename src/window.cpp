@@ -41,8 +41,8 @@ Window::Window(int width, int height)
 
     if (width == 0)
     {
-        width  = display_mode->w / 2;
-        height = display_mode->h / 2;
+        width  = display_mode->w - display_mode->w / 4;
+        height = display_mode->h - display_mode->h / 4;
     }
 
     m_Window = SDL_CreateWindow(

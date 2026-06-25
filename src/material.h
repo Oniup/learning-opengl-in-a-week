@@ -9,22 +9,33 @@
 
 namespace LrnGL {
 
+void           LoadMaterialDefaultTexture(std::string_view asset_dir);
+void           UnloadMaterialDefaultTexture();
+const Texture& GetMaterialDefaultWhiteTexture();
+
+void InitializeMaterialTextureUniforms(Shader& shader);
+
+struct MaterialColorInput
+{
+    glm::vec3 Color = glm::vec3(1.0f);
+    Texture   Image = GetMaterialDefaultWhiteTexture();
+
+    MaterialColorInput() = default;
+    MaterialColorInput(glm::vec3 color);
+    MaterialColorInput(Texture&& image);
+    MaterialColorInput(glm::vec3 color, Texture&& image);
+};
+
 struct Material
 {
-    static Texture DefaultTexture;
+    Shader*            Shader       = nullptr;
+    MaterialColorInput Diffuse      = glm::vec3(1.0f);
+    MaterialColorInput Specular     = glm::vec3(0.0f);
+    MaterialColorInput Emission     = glm::vec3(0.0f);
+    glm::vec2          TilingFactor = glm::vec2(1.0f);
+    int                Shininess    = 32;
 
-    static void LoadDefaultTexture(std::string_view asset_dir);
-    static void UnloadDefaultTexture();
-
-    static void InitializeMaterialTextureUniforms(Shader& shader);
-
-    glm::vec3 Tint         = glm::vec3(1.0f);
-    glm::vec2 TilingFactor = glm::vec2(1.0f);
-    Texture   Diffuse      = DefaultTexture;
-    Texture   Specular     = DefaultTexture;
-    int       Shininess    = 32;
-
-    void PushInfoToShader(Shader& shader);
+    void PushInfoToShader();
 };
 
 } // namespace LrnGL

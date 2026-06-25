@@ -78,14 +78,14 @@ int main(int argc, char** argv)
     bool          render_wireframe_mode = false;
     bool          hide_mouse            = true;
 
-    LrnGL::Material::LoadDefaultTexture(asset_dir);
+    LrnGL::LoadMaterialDefaultTexture(asset_dir);
 
     glEnable(GL_DEPTH_TEST);
     HandleCursorInput(window, hide_mouse);
 
-    LrnGL::Shader shader(fmt::format("{}/shaders/Phong.frag", asset_dir),
-                         fmt::format("{}/shaders/Phong.vert", asset_dir));
-    LrnGL::Material::InitializeMaterialTextureUniforms(shader);
+    LrnGL::Shader phong_shader(fmt::format("{}/shaders/Phong.frag", asset_dir),
+                               fmt::format("{}/shaders/Phong.vert", asset_dir));
+    LrnGL::InitializeMaterialTextureUniforms(phong_shader);
 
     Object objects[] = {
         Object{Object::Eyeball, LrnGL::Transform{{0.0f, 0.0f, 0.0f}}},
@@ -116,14 +116,18 @@ int main(int argc, char** argv)
     LrnGL::Material materials[] = {
         // Eyeball
         LrnGL::Material{
+            .Shader    = &phong_shader,
             .Diffuse   = LrnGL::Texture(fmt::format("{}/textures/eyeball.png", asset_dir)),
+            .Specular  = glm::vec3(1.0f),
             .Shininess = 32,
         },
         // Box
         LrnGL::Material{
+            .Shader  = &phong_shader,
             .Diffuse = LrnGL::Texture(fmt::format("{}/textures/container2.png", asset_dir)),
             .Specular =
-                LrnGL::Texture(fmt::format("{}/textures/container2_specular.png", asset_dir)),
+                LrnGL::Texture(fmt::format("{}/textures/container2_specular2.png", asset_dir)),
+            .Emission  = LrnGL::Texture(fmt::format("{}/textures/matrix.jpg", asset_dir)),
             .Shininess = 128,
         },
     };
@@ -152,8 +156,9 @@ int main(int argc, char** argv)
         last_time      = current_time;
         elapsed_time += delta;
 
-        objects[0].Transform.RotateYaw(delta);
-        objects[0].Transform.RotatePitch(delta);
+        objects[0].Transform.RotatePitch(delta * 1.5f);
+        objects[0].Transform.RotateYaw(delta * 2.0f);
+        objects[0].Transform.RotateRoll(delta * 0.5);
 
         while (SDL_PollEvent(&event))
         {
@@ -188,7 +193,7 @@ int main(int argc, char** argv)
         view_matrix           = camera.CreateViewMatrix();
 
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view_matrix);
-        light_manager.PushLightInfoToShader(shader, camera.GetPosition());
+        light_manager.PushLightInfoToShader(phong_shader, camera.GetPosition());
 
         for (const Object& object : objects)
         {
@@ -196,13 +201,15 @@ int main(int argc, char** argv)
             LrnGL::Material&     material     = materials[object.Type];
             LrnGL::VertexBuffer& buffer       = vertex_buffers[object.Type];
 
-            material.PushInfoToShader(shader);
-            buffer.Draw(shader, camera.GetProjectionMatrix(), view_matrix, model_matrix);
+            material.PushInfoToShader();
+            material.Shader->Uniform("u_Time", elapsed_time);
+
+            buffer.Draw(*material.Shader, camera.GetProjectionMatrix(), view_matrix, model_matrix);
         }
 
         window.SwapBuffers();
     }
 
-    LrnGL::Material::UnloadDefaultTexture();
+    LrnGL::UnloadMaterialDefaultTexture();
     return 0;
 }

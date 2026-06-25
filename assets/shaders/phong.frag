@@ -1,13 +1,16 @@
 #version 460 core
 
 #define LIGHT_TYPE_POINT 0
-#define LIGHT_TYPE_DIRECTIONAL 1
-#define LIGHT_TYPE_SPOT 2
+#define LIGHT_TYPE_SPOT 1
+#define LIGHT_TYPE_DIRECTIONAL 2
+
+out vec4 FragColor;
 
 struct Light
 {
     int   Type;
     vec3  Position;
+    vec3  Direction;
     float Intensity;
 
     vec3  Color;
@@ -16,23 +19,31 @@ struct Light
     int   SpecularShininess;
 };
 
-struct Material
+struct MaterialColorInput
 {
-    vec3      Tint;
-    sampler2D Diffuse;
-    sampler2D Specular;
-    float     Shininess;
+    vec3      Color;
+    sampler2D Image;
 };
 
+struct Material
+{
+    MaterialColorInput Diffuse;
+    MaterialColorInput Specular;
+    MaterialColorInput Emission;
+    float              Shininess;
+};
+
+// Lights
 uniform vec3  u_CameraPosition;
 uniform int   u_LightCount;
 uniform Light u_Lights[10];
 uniform vec3  u_AmbientColor;
 
+// Other
 uniform Material u_Material;
+uniform float    u_Time;
 
-out vec4 FragColor;
-
+// From Vertex
 in vec3 Color;
 in vec3 Normal;
 in vec2 TexCoords;
@@ -52,26 +63,46 @@ vec3 CalculateSpecularLight(Light light, vec3 light_dir, vec3 normal)
     return light.SpecularStrength * specular * light.Specular;
 }
 
+float LengthSq(vec3 vec)
+{
+    return dot(vec, vec);
+}
+
 void main()
 {
     vec3 normal = normalize(Normal);
 
-    vec3 diffuse  = vec3(0.0f);
-    vec3 specular = vec3(0.0f);
+    vec3 diffuse_light  = vec3(0.0f);
+    vec3 specular_light = vec3(0.0f);
     for (int i = 0; i < u_LightCount; i++)
     {
-        vec3 light_dir = normalize(u_Lights[i].Position - FragPosition);
+        Light light = u_Lights[i];
 
-        diffuse += CalculateDiffuseLight(u_Lights[i], light_dir, normal) * u_Lights[i].Intensity;
-        specular += CalculateSpecularLight(u_Lights[i], light_dir, normal) * u_Lights[i].Intensity;
+        vec3 light_dir = vec3(0.0f);
+        switch (light.Type)
+        {
+        case LIGHT_TYPE_POINT:       light_dir = normalize(light.Position - FragPosition); break;
+        case LIGHT_TYPE_SPOT:
+        case LIGHT_TYPE_DIRECTIONAL: light_dir = normalize(-light.Direction); break;
+        }
+
+        diffuse_light += CalculateDiffuseLight(light, light_dir, normal) * light.Intensity;
+        specular_light += CalculateSpecularLight(light, light_dir, normal) * light.Intensity;
     }
 
-    vec4 diffuse_texture  = texture(u_Material.Diffuse, TexCoords);
-    vec4 specular_texture = texture(u_Material.Specular, TexCoords);
+    vec4 diffuse_texture  = texture(u_Material.Diffuse.Image, TexCoords);
+    vec4 specular_texture = texture(u_Material.Specular.Image, TexCoords);
+    vec4 emission_texture = texture(u_Material.Emission.Image, TexCoords + vec2(0.0, 0.3 * u_Time));
 
-    vec3 final_diffuse  = diffuse * diffuse_texture.rgb;
-    vec3 final_specular = specular * specular_texture.rgb;
-    vec3 final_ambient  = u_AmbientColor * diffuse_texture.rgb;
+    float emission_pulse = (sin(u_Time) * 0.5 + 0.5);
 
-    FragColor = vec4(final_diffuse + final_specular + final_ambient, diffuse_texture.a);
+    vec3 diffuse  = diffuse_light * diffuse_texture.rgb * u_Material.Diffuse.Color;
+    vec3 specular = specular_light * specular_texture.rgb * u_Material.Specular.Color;
+    vec3 emission = emission_texture.rgb * u_Material.Emission.Color * emission_pulse;
+    vec3 ambient  = u_AmbientColor * diffuse_texture.rgb;
+
+    if (specular_texture.rgb != vec3(0.0))
+        emission = vec3(0.0);
+
+    FragColor = vec4(diffuse + specular + ambient + emission, diffuse_texture.a);
 }

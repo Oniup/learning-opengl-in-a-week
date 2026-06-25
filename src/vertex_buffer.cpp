@@ -120,7 +120,7 @@ ShapeMesh ShapeMesh::GenerateSphere(unsigned subdivisions, unsigned height_subdi
     mesh.Indices.reserve(height_subdivisions * subdivisions * 6);
 
     // Calculate vertices
-    for (unsigned i = 0; i <= height_subdivisions; i++)
+    for (unsigned i = 0; i <= height_subdivisions; i++) // Double up at 0/360 so uv connects
     {
         float vertical_progress = static_cast<float>(i) / height_subdivisions;
         float theta             = vertical_progress * std::numbers::pi;
@@ -145,7 +145,7 @@ ShapeMesh ShapeMesh::GenerateSphere(unsigned subdivisions, unsigned height_subdi
         }
     }
 
-    // // Calculate indices
+    // Calculate indices
     for (unsigned i = 0; i < height_subdivisions; i++)
     {
         for (unsigned j = 0; j < subdivisions; j++)
