@@ -54,6 +54,7 @@ PRIVATE
     SDL3::SDL3
     SDL3_image::SDL3_image
     glm::glm
+    assimp::assimp
     glad
     imgui
 )

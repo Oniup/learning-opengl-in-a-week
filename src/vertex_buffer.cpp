@@ -8,7 +8,7 @@
 
 namespace LrnGL {
 
-ShapeMesh ShapeMesh::GetPlane(glm::vec3 color)
+ShapeVertexData ShapeVertexData::GetPlane(glm::vec3 color)
 {
     glm::vec3 color1 = color == glm::vec3(0.0f) ? glm::vec3(1.0f, 0.0f, 0.0f) : color;
     glm::vec3 color2 = color == glm::vec3(0.0f) ? glm::vec3(0.0f, 1.0f, 0.0f) : color;
@@ -27,13 +27,13 @@ ShapeMesh ShapeMesh::GetPlane(glm::vec3 color)
             1, 2, 3  // second triangle
         // clang-format on
     };
-    return ShapeMesh{
+    return ShapeVertexData{
         .Vertices = std::move(vertices),
         .Indices  = std::move(indices),
     };
 }
 
-ShapeMesh ShapeMesh::GetCube(glm::vec3 color)
+ShapeVertexData ShapeVertexData::GetCube(glm::vec3 color)
 {
     glm::vec3 color1 = color == glm::vec3(0.0f) ? glm::vec3(1.0f, 0.0f, 0.0f) : color;
     glm::vec3 color2 = color == glm::vec3(0.0f) ? glm::vec3(0.0f, 1.0f, 0.0f) : color;
@@ -106,16 +106,16 @@ ShapeMesh ShapeMesh::GetCube(glm::vec3 color)
         };
     // clang-format on
 
-    return ShapeMesh{
+    return ShapeVertexData{
         .Vertices = std::move(vertices),
         .Indices  = std::move(indices),
     };
 }
 
-ShapeMesh ShapeMesh::GenerateSphere(unsigned subdivisions, unsigned height_subdivisions,
-                                    glm::vec3 color)
+ShapeVertexData ShapeVertexData::GenerateSphere(unsigned subdivisions, unsigned height_subdivisions,
+                                                glm::vec3 color)
 {
-    ShapeMesh mesh;
+    ShapeVertexData mesh;
     mesh.Vertices.reserve((height_subdivisions + 1) * (subdivisions + 1));
     mesh.Indices.reserve(height_subdivisions * subdivisions * 6);
 
@@ -168,7 +168,7 @@ ShapeMesh ShapeMesh::GenerateSphere(unsigned subdivisions, unsigned height_subdi
     return mesh;
 }
 
-bool ShapeMesh::UsesIndices() const
+bool ShapeVertexData::UsesIndices() const
 {
     return !Indices.empty();
 }
@@ -188,16 +188,25 @@ VertexBuffer::VertexBuffer(bool use_elements, bool dynamic)
     }
 }
 
-VertexBuffer::VertexBuffer(const ShapeMesh& mesh, bool dynamic)
-    : VertexBuffer(mesh.UsesIndices(), dynamic)
+VertexBuffer::VertexBuffer(const std::vector<Vertex>& vertices, bool dynamic)
+    : VertexBuffer(false, dynamic)
 {
-    PushAttribute(0, 3, offsetof(Vertex, Position));
-    PushAttribute(1, 3, offsetof(Vertex, Normal));
-    PushAttribute(2, 3, offsetof(Vertex, Color));
-    PushAttribute(3, 2, offsetof(Vertex, TexCoords));
+    PushVertexAttributes();
+    PushData(VertexBuffer_Vertex, vertices.size() * sizeof(Vertex), vertices.data());
+}
 
-    PushData(VertexBuffer_Vertex, mesh.Vertices.size() * sizeof(Vertex), mesh.Vertices.data());
-    PushData(VertexBuffer_Element, mesh.Indices.size() * sizeof(unsigned), mesh.Indices.data());
+VertexBuffer::VertexBuffer(const std::vector<Vertex>&   vertices,
+                           const std::vector<unsigned>& indices, bool dynamic)
+    : VertexBuffer(true, dynamic)
+{
+    PushVertexAttributes();
+    PushData(VertexBuffer_Vertex, vertices.size() * sizeof(Vertex), vertices.data());
+    PushData(VertexBuffer_Element, indices.size() * sizeof(unsigned), indices.data());
+}
+
+VertexBuffer::VertexBuffer(const ShapeVertexData& mesh, bool dynamic)
+    : VertexBuffer(mesh.Vertices, mesh.Indices, dynamic)
+{
 }
 
 VertexBuffer::~VertexBuffer()
@@ -283,6 +292,14 @@ void VertexBuffer::Destroy()
         glDeleteBuffers(ElementBufferEnabled() ? 2 : 1, m_Buffers.data());
         m_VertexArray = 0;
     }
+}
+
+void VertexBuffer::PushVertexAttributes()
+{
+    PushAttribute(0, 3, offsetof(Vertex, Position));
+    PushAttribute(1, 3, offsetof(Vertex, Normal));
+    PushAttribute(2, 3, offsetof(Vertex, Color));
+    PushAttribute(3, 2, offsetof(Vertex, TexCoords));
 }
 
 } // namespace LrnGL

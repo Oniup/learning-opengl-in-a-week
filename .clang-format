@@ -148,15 +148,12 @@ IfMacros:
 SortIncludes: true
 IncludeBlocks: Regroup
 IncludeCategories:
-    # Thirdparty libraries <glad/gl.h>
-    - Regex: "^<(imgui|glad|SDL3|SDL3_image|fmt|glm|backends).*>"
-      Priority: 1
-      CaseSensitive: true
-      # std library such as <vector>
     - Regex: "^<[a-z_]+>$"
       Priority: 2
       CaseSensitive: true
-      # Custom source
+    - Regex: "^<.*>"
+      Priority: 1
+      CaseSensitive: true
     - Regex: '^".*"'
       Priority: 3
       CaseSensitive: true

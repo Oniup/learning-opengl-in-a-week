@@ -36,7 +36,7 @@ namespace Internal {
 LightManager::LightManager(const std::string& asset_dir)
     : m_LightDebugShader(fmt::format("{}/shaders/Light.frag", asset_dir),
                          fmt::format("{}/shaders/Light.vert", asset_dir)),
-      m_Buffer(ShapeMesh::GenerateSphere(10, 10))
+      m_Buffer(ShapeVertexData::GenerateSphere(10, 10))
 {
 }
 

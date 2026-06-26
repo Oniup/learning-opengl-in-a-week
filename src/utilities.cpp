@@ -1,9 +1,10 @@
+#include "utilities.h"
+
 #include <SDL3/SDL_timer.h>
 #include <glad/gl.h>
 #include <imgui.h>
 
 #include "camera.h"
-#include "scenes/scenes.h"
 #include "window.h"
 
 namespace LrnGL {
@@ -61,10 +62,9 @@ void ToggleRenderWireframeMode()
     glPolygonMode(GL_FRONT_AND_BACK, RenderWireframeMode ? GL_LINE : GL_FILL);
 }
 
-void CalculateDeltaTime(float& elapsed, float& delta)
+void CalculateDeltaTime(float& elapsed_time, float& delta)
 {
-    static float last_time    = 0.0f;
-    static float elapsed_time = 0.0f;
+    static float last_time = 0.0f;
 
     uint64_t current_time = SDL_GetPerformanceCounter();
     delta         = (float)(current_time - last_time) / (float)SDL_GetPerformanceFrequency();

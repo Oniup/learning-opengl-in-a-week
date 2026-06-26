@@ -1,17 +1,8 @@
 #include <SDL3/SDL_events.h>
-#include <SDL3/SDL_keyboard.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_mouse.h>
 #include <fmt/format.h>
 #include <glad/gl.h>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/trigonometric.hpp>
-#include <imgui.h>
 
 #include <numbers>
 #include <random>
@@ -23,6 +14,7 @@
 #include "shader.h"
 #include "texture.h"
 #include "transform.h"
+#include "utilities.h"
 #include "vertex_buffer.h"
 #include "window.h"
 
@@ -42,9 +34,6 @@ struct Object
 
 int PhongMain(const std::string& asset_dir, Window& window, int argc, const char** argv)
 {
-    glEnable(GL_DEPTH_TEST);
-    // ToggleCursorHiddenMode(window);
-
     Shader phong_shader(fmt::format("{}/shaders/Phong.frag", asset_dir),
                         fmt::format("{}/shaders/Phong.vert", asset_dir));
     InitializeMaterialTextureUniforms(phong_shader);
@@ -94,8 +83,8 @@ int PhongMain(const std::string& asset_dir, Window& window, int argc, const char
     };
 
     VertexBuffer vertex_buffers[] = {
-        VertexBuffer(ShapeMesh::GenerateSphere(20, 20)),
-        VertexBuffer((ShapeMesh::GetCube())),
+        VertexBuffer(ShapeVertexData::GenerateSphere(20, 20)),
+        VertexBuffer((ShapeVertexData::GetCube())),
     };
 
     LightManager light_manager(asset_dir);

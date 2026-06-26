@@ -12,16 +12,6 @@ class Camera;
 
 // Demos
 int PhongMain(const std::string& asset_dir, Window& window, int argc, const char** argv);
-
-// Utility
-glm::vec3 RGBToNormalized(unsigned r, unsigned g, unsigned b);
-void      CommonEventHandles(const SDL_Event& event, Window& window, Camera& camera, float delta);
-
-bool IsMouseHidden();
-bool IsRenderWireframeMode();
-void ToggleCursorHiddenMode(Window& window);
-void ToggleRenderWireframeMode();
-
-void CalculateDeltaTime(float& elapsed, float& delta);
+int ModelLoadingMain(const std::string& asset_dir, Window& window, int argc, const char** argv);
 
 } // namespace LrnGL

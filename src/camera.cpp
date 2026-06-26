@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "scenes/scenes.h"
+#include "utilities.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 

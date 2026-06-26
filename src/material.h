@@ -9,8 +9,8 @@
 
 namespace LrnGL {
 
-void           LoadMaterialDefaultTexture(std::string_view asset_dir);
-void           UnloadMaterialDefaultTexture();
+void           LoadMaterialDefaults(std::string_view asset_dir);
+void           UnloadMaterialDefaults();
 const Texture& GetMaterialDefaultWhiteTexture();
 
 void InitializeMaterialTextureUniforms(Shader& shader);

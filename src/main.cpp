@@ -1,3 +1,4 @@
+#include <glad/gl.h>
 
 #include <filesystem>
 
@@ -31,10 +32,13 @@ int main(int argc, const char** argv)
     std::string asset_dir = GetAssetDirectory();
     Window      window;
 
-    LoadMaterialDefaultTexture(asset_dir);
+    glEnable(GL_DEPTH_TEST);
 
-    PhongMain(asset_dir, window, argc, argv);
+    LoadMaterialDefaults(asset_dir);
 
-    UnloadMaterialDefaultTexture();
+    // PhongMain(asset_dir, window, argc, argv);
+    ModelLoadingMain(asset_dir, window, argc, argv);
+
+    UnloadMaterialDefaults();
     return 0;
 }

@@ -8,14 +8,15 @@ namespace LrnGL {
 namespace Internal {
 
     Texture WhiteTexture;
-}
 
-void LoadMaterialDefaultTexture(std::string_view asset_dir)
+} // namespace Internal
+
+void LoadMaterialDefaults(std::string_view asset_dir)
 {
     Internal::WhiteTexture = Texture(fmt::format("{}/textures/default.png", asset_dir));
 }
 
-void UnloadMaterialDefaultTexture()
+void UnloadMaterialDefaults()
 {
     Internal::WhiteTexture.Destroy();
 }

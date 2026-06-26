@@ -24,12 +24,12 @@ enum VertexBufferType : unsigned
     VertexBuffer_Element,
 };
 
-struct ShapeMesh
+struct ShapeVertexData
 {
-    static ShapeMesh GetPlane(glm::vec3 color = glm::vec3(1.0f));
-    static ShapeMesh GetCube(glm::vec3 color = glm::vec3(1.0f));
-    static ShapeMesh GenerateSphere(unsigned subdivisions, unsigned height_subdivisions,
-                                    glm::vec3 color = glm::vec3(1.0f));
+    static ShapeVertexData GetPlane(glm::vec3 color = glm::vec3(1.0f));
+    static ShapeVertexData GetCube(glm::vec3 color = glm::vec3(1.0f));
+    static ShapeVertexData GenerateSphere(unsigned subdivisions, unsigned height_subdivisions,
+                                          glm::vec3 color = glm::vec3(1.0f));
 
     std::vector<Vertex>   Vertices;
     std::vector<unsigned> Indices;
@@ -43,7 +43,10 @@ public:
     static VertexBuffer Invalid;
 
     VertexBuffer(bool use_elements = false, bool dynamic = false);
-    VertexBuffer(const ShapeMesh& mesh, bool dynamic = false);
+    VertexBuffer(const std::vector<Vertex>& vertices, bool dynamic = false);
+    VertexBuffer(const std::vector<Vertex>& vertices, const std::vector<unsigned>& indices,
+                 bool dynamic = false);
+    VertexBuffer(const ShapeVertexData& mesh, bool dynamic = false);
     ~VertexBuffer();
 
     VertexBuffer(VertexBuffer&& other);
@@ -63,6 +66,8 @@ public:
 
 private:
     VertexBuffer() = default;
+
+    void PushVertexAttributes();
 
     unsigned                m_VertexArray = 0;
     std::array<unsigned, 2> m_Buffers     = {0, 0};
