@@ -15,7 +15,7 @@ namespace LrnGL {
 class Shader
 {
 public:
-    static Shader invalid_shader;
+    static Shader InvalidShader;
 
     Shader() = default;
     Shader(std::string_view fragment, std::string_view vertex);

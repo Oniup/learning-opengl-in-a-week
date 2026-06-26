@@ -50,7 +50,7 @@ MaterialColorInput::MaterialColorInput(glm::vec3 color, Texture&& image)
 {
 }
 
-void Material::PushInfoToShader()
+void Material::PushInfoToShader() const
 {
     // Color
     Shader->Uniform("u_Material.Diffuse.Color", Diffuse.Color);

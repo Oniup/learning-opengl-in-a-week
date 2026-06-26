@@ -1,13 +1,12 @@
-#include "Shader.h"
+#include "shader.h"
 
+#include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_stdinc.h>
 #include <fmt/format.h>
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <array>
-#include <filesystem>
-#include <fstream>
-#include <string>
 
 #include "error.h"
 
@@ -16,38 +15,37 @@ namespace LrnGL {
 static constexpr size_t info_log_size    = 1024;
 static constexpr size_t name_buffer_size = 100;
 
-Shader Shader::invalid_shader;
+Shader Shader::InvalidShader;
 
 Shader::Shader(std::string_view fragment, std::string_view vertex)
 {
-    constexpr size_t                           shader_count = 2;
-    std::array<std::string_view, shader_count> source_paths = {fragment, vertex};
-    std::array<unsigned, 2>                    shaderIDs    = {};
+    ASSERT_STRING_VIEW_NULL_TERMINATED(fragment);
+    ASSERT_STRING_VIEW_NULL_TERMINATED(vertex);
 
-    for (size_t i = 0; i < shader_count; i++)
+    constexpr unsigned                         shader_count = 2;
+    std::array<std::string_view, shader_count> source_paths = {fragment, vertex};
+    std::array<unsigned, 2>                    shader_ids   = {};
+
+    for (unsigned i = 0; i < shader_count; i++)
     {
         std::string_view path = source_paths[i];
-        char             path_buffer[info_log_size];
-        auto             result = fmt::format_to_n(path_buffer, info_log_size - 1, "{}", path);
-        *result.out             = '\0';
 
-        std::string source;
-        size_t      source_size = std::filesystem::file_size(path);
-        source.resize(source_size);
-
-        std::ifstream stream(path_buffer);
-        if (!stream.is_open())
+        size_t source_size;
+        char*  source = static_cast<char*>(SDL_LoadFile(path.data(), &source_size));
+        if (!source)
         {
             ERROR("Failed to create shader, could not find {} path", path);
+            if (i > 0)
+                glDeleteShader(shader_ids[0]);
+            m_ID = 0;
             return;
         }
 
-        stream.read(source.data(), source_size);
-
-        unsigned    shader  = glCreateShader(GL_FRAGMENT_SHADER + i);
-        const char* cSource = source.c_str();
-        glShaderSource(shader, 1, &cSource, nullptr);
+        unsigned shader = glCreateShader(GL_FRAGMENT_SHADER + i);
+        glShaderSource(shader, 1, &source, nullptr);
         glCompileShader(shader);
+
+        SDL_free(source);
 
         int success;
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -58,20 +56,20 @@ Shader::Shader(std::string_view fragment, std::string_view vertex)
             ERROR("Failed to compile shader for path {}: '{}'", path, info_log);
 
             if (i > 0)
-                glDeleteShader(shaderIDs[i]);
+                glDeleteShader(shader_ids[0]);
             m_ID = 0;
             return;
         }
 
-        shaderIDs[i] = shader;
+        shader_ids[i] = shader;
     }
 
     m_ID = glCreateProgram();
-    for (unsigned shader : shaderIDs)
+    for (unsigned shader : shader_ids)
         glAttachShader(m_ID, shader);
     glLinkProgram(m_ID);
 
-    for (unsigned shader : shaderIDs)
+    for (unsigned shader : shader_ids)
         glDeleteShader(shader);
 
     int success;
@@ -172,7 +170,7 @@ void Shader::Uniform(const Texture& texture, unsigned id)
 
 int Shader::GetUniformLocation(std::string_view name)
 {
-    ASSERT(name.data()[name.size()] == '\0', "name parameter '{}' must be null terminated", name);
+    ASSERT_STRING_VIEW_NULL_TERMINATED(name);
     return glGetUniformLocation(m_ID, name.data());
 }
 

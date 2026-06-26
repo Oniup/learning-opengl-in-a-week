@@ -94,3 +94,6 @@ void OnError(SeverityColor severity, std::string_view file, std::string_view fun
 #define ERROR(...)                                                                                 \
     LrnGL::err::intl::OnError(                                                                     \
         LrnGL::err::intl::Severity_Error, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+
+#define ASSERT_STRING_VIEW_NULL_TERMINATED(str_)                                                   \
+    ASSERT(str_.data()[str_.size()] == '\0', "name parameter '{}' must be null terminated", str_)

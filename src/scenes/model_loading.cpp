@@ -22,7 +22,7 @@ namespace LrnGL {
 struct Actor
 {
     Transform Transform;
-    Mesh      Mesh;
+    Model     Model;
 };
 
 int ModelLoadingMain(const std::string& asset_dir, Window& window, int argc, const char** argv)
@@ -45,19 +45,27 @@ int ModelLoadingMain(const std::string& asset_dir, Window& window, int argc, con
     Camera camera(glm::vec3(0.0f, 0.0f, 6.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
 
+    Mesh mesh = Mesh(ShapeVertexData::GenerateSphere(20, 20),
+                     Material{
+                         .Shader    = &phong_shader,
+                         .Diffuse   = Texture(fmt::format("{}/textures/eyeball.png", asset_dir)),
+                         .Specular  = glm::vec3(1.0f),
+                         .Shininess = 32,
+                     });
+
     Actor eyeball = Actor{
         .Transform =
             Transform{
                 .Position = glm::vec3(-2.0f, 0.0f, 0.0f),
                 .Rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
             },
-        .Mesh = Mesh(ShapeVertexData::GenerateSphere(20, 20),
-                     Material{
-                         .Shader    = &phong_shader,
-                         .Diffuse   = Texture(fmt::format("{}/textures/eyeball.png", asset_dir)),
-                         .Specular  = glm::vec3(1.0f),
-                         .Shininess = 32,
-                     }),
+        .Model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
+                      Material{
+                          .Shader    = &phong_shader,
+                          .Diffuse   = Texture(fmt::format("{}/textures/eyeball.png", asset_dir)),
+                          .Specular  = glm::vec3(1.0f),
+                          .Shininess = 32,
+                      }),
     };
 
     SDL_Event event;
@@ -83,8 +91,8 @@ int ModelLoadingMain(const std::string& asset_dir, Window& window, int argc, con
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view_matrix);
         light_manager.PushLightInfoToShader(phong_shader, camera.GetPosition());
 
-        eyeball.Mesh.GetMaterial().Shader->Uniform("u_Time", elapsed_time);
-        eyeball.Mesh.Draw(eyeball.Transform, camera.GetProjectionMatrix(), view_matrix);
+        eyeball.Model.Draw(
+            elapsed_time, camera.GetProjectionMatrix(), view_matrix, eyeball.Transform);
 
         window.SwapBuffers();
     }

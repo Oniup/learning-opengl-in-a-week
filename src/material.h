@@ -35,7 +35,7 @@ struct Material
     glm::vec2          TilingFactor = glm::vec2(1.0f);
     int                Shininess    = 32;
 
-    void PushInfoToShader();
+    void PushInfoToShader() const;
 };
 
 } // namespace LrnGL

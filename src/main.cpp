@@ -1,6 +1,7 @@
 #include <glad/gl.h>
 
 #include <filesystem>
+#include <string_view>
 
 #include "error.h"
 #include "material.h"
