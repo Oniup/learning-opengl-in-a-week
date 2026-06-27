@@ -34,7 +34,7 @@ struct Actor
 
 int PhongMain(Window& window, int argc, const char** argv)
 {
-    Shader phong_shader(GetAssetPath("shaders/Phong.frag"), GetAssetPath("shaders/Phong.vert"));
+    Shader phong_shader(GetAssetPath("shaders/phong.frag"), GetAssetPath("shaders/phong.vert"));
     InitializeMaterialTextureUniforms(phong_shader);
 
     Actor objects[] = {

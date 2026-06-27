@@ -12,24 +12,25 @@ namespace LrnGL {
 
 Texture Texture::Invalid;
 
-Texture::Texture(std::string_view path, bool flip_vertically, TextureFilter filter)
+Texture::Texture(std::string_view path, bool srgb_correction, bool flip_vertically,
+                 TextureFilter filter)
 {
     SDL_Surface* loaded_surface = IMG_Load(path.data());
     ASSERT(loaded_surface, "Failed to load image from '{}'", path);
 
-    LoadFromSurface(loaded_surface, flip_vertically, filter);
+    LoadFromSurface(loaded_surface, srgb_correction, flip_vertically, filter);
 
     SDL_DestroySurface(loaded_surface);
 }
 
-Texture::Texture(const unsigned char* buffer, unsigned buffer_length, bool flip_vertically,
-                 TextureFilter filter)
+Texture::Texture(const unsigned char* buffer, unsigned buffer_length, bool srgb_correction,
+                 bool flip_vertically, TextureFilter filter)
 {
     SDL_IOStream* stream         = SDL_IOFromConstMem(buffer, buffer_length);
     SDL_Surface*  loaded_surface = IMG_Load_IO(stream, 1);
     ASSERT(loaded_surface, "Failed to load image from buffer data: {}", SDL_GetError());
 
-    LoadFromSurface(loaded_surface, flip_vertically, filter);
+    LoadFromSurface(loaded_surface, flip_vertically, srgb_correction, filter);
 
     SDL_DestroySurface(loaded_surface);
 }
@@ -90,8 +91,8 @@ void Texture::Destroy()
     }
 }
 
-void Texture::LoadFromSurface(SDL_Surface* loaded_surface, bool flip_vertically,
-                              TextureFilter filter)
+void Texture::LoadFromSurface(SDL_Surface* loaded_surface, bool srgb_correction,
+                              bool flip_vertically, TextureFilter filter)
 {
     if (flip_vertically)
         SDL_FlipSurface(loaded_surface, SDL_FLIP_VERTICAL);
@@ -117,11 +118,11 @@ void Texture::LoadFromSurface(SDL_Surface* loaded_surface, bool flip_vertically,
         min_filter = GL_NEAREST_MIPMAP_NEAREST;
         mag_filter = GL_NEAREST;
         break;
-    case TextureFilter::LinearNoMipmap:
+    case TextureFilter::NoMipmapLinear:
         min_filter = GL_LINEAR;
         mag_filter = GL_LINEAR;
         break;
-    case TextureFilter::NearestNoMipmap:
+    case TextureFilter::NoMipmapNearest:
         min_filter = GL_NEAREST;
         mag_filter = GL_NEAREST;
         break;
@@ -134,7 +135,8 @@ void Texture::LoadFromSurface(SDL_Surface* loaded_surface, bool flip_vertically,
 
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 GL_RGBA,
+                 srgb_correction ? GL_SRGB_ALPHA : GL_RGBA,
+                 // GL_RGBA,
                  m_Width,
                  m_Height,
                  0,

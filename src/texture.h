@@ -10,8 +10,8 @@ enum class TextureFilter
 {
     Linear,
     Nearest,
-    LinearNoMipmap,
-    NearestNoMipmap,
+    NoMipmapLinear,
+    NoMipmapNearest,
 };
 
 class Texture
@@ -20,10 +20,10 @@ public:
     static Texture Invalid;
 
     Texture() = default;
-    Texture(std::string_view path, bool flip_vertically = true,
+    Texture(std::string_view path, bool srgb_correction = false, bool flip_vertically = true,
             TextureFilter filter = TextureFilter::Linear);
-    Texture(const unsigned char* buffer, unsigned buffer_length, bool flip_vertically = true,
-            TextureFilter filter = TextureFilter::Linear);
+    Texture(const unsigned char* buffer, unsigned buffer_length, bool srgb_correction = false,
+            bool flip_vertically = true, TextureFilter filter = TextureFilter::Linear);
     ~Texture();
 
     Texture(const Texture& texture);
@@ -39,7 +39,8 @@ public:
     int      GetHeight() const { return m_Height; }
 
 private:
-    void LoadFromSurface(SDL_Surface* surface, bool flip_vertically, TextureFilter filter);
+    void LoadFromSurface(SDL_Surface* loaded_surface, bool srgb_correction, bool flip_vertically,
+                         TextureFilter filter);
 
     unsigned m_ID     = 0;
     int      m_Width  = 0;

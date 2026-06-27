@@ -32,13 +32,14 @@ struct Actor
 
 int ModelLoadingMain(Window& window, int argc, const char** argv)
 {
-    Shader phong_shader(GetAssetPath("shaders/Phong.frag"), GetAssetPath("shaders/Phong.vert"));
+    Shader phong_shader(GetAssetPath("shaders/model_phong.frag"),
+                        GetAssetPath("shaders/model_phong.vert"));
     InitializeMaterialTextureUniforms(phong_shader);
 
     LightManager light_manager;
     light_manager.PushLight(LightData{
         .Type            = LightData::Directional,
-        .Direction       = glm::vec3(1.0f, -1.0f, 0.0f),
+        .Direction       = glm::vec3(1.0f, -1.0f, -1.0f),
         .ShowDebugVisual = true,
     });
     light_manager.PushLight(LightData{
@@ -49,14 +50,6 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
     Camera camera(glm::vec3(0.0f, 0.0f, 6.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
 
-    Mesh mesh = Mesh(ShapeVertexData::GenerateSphere(20, 20),
-                     Material{
-                         .Shader    = &phong_shader,
-                         .Diffuse   = Texture(GetAssetPath("textures/eyeball.png")),
-                         .Specular  = glm::vec3(1.0f),
-                         .Shininess = 32,
-                     });
-
     Actor eyeball{
         .Transform =
             Transform{
@@ -66,7 +59,7 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
         .Model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
                       Material{
                           .Shader    = &phong_shader,
-                          .Diffuse   = Texture(GetAssetPath("textures/eyeball.png")),
+                          .Diffuse   = Texture(GetAssetPath("textures/eyeball.png"), false),
                           .Specular  = glm::vec3(1.0f),
                           .Shininess = 32,
                       }),
@@ -77,26 +70,22 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
             Transform{
                 .Position = glm::vec3(2.0f, 0.0f, 0.0f),
             },
-        .Model = Model(GetAssetPath("models/backpack/backpack.obj"), &phong_shader, false),
+        .Model = Model(
+            GetAssetPath("models/backpack/backpack.obj"), &phong_shader, ModelLoading_FlipUVs),
     };
 
-    Actor bmw{
+    Actor psx_bed{
         .Transform =
             Transform{
-                .Position = glm::vec3(10.0f, 0.0f, 0.0f),
-                .Scale    = glm::vec3(0.01f),
+                .Position = glm::vec3(6.0f, -1.0f, 0.0f),
+                // .Scale    = glm::vec3(0.01f),
             },
-        .Model = Model(GetAssetPath("models/bmw/bmw.obj"), &phong_shader, false),
+        // .Model = Model(GetAssetPath("models/psx-house/props/bed.glb"),
+        .Model = Model(GetAssetPath("models/soldier/soldier.fbx"),
+                       &phong_shader,
+                       ModelLoading_FlipUVs | ModelLoading_ApplyGammaCorrectionSRGB |
+                           ModelLoading_DisableTransformingVertices),
     };
-
-    // Actor guitar_backpack{
-    //     .Transform =
-    //         Transform{
-    //             .Position = glm::vec3(2.0f, 0.0f, 0.0f),
-    //             .Scale    = glm::vec3(0.01f),
-    //         },
-    //     .Model = Model(GetAssetPath("models/survival_guitar_backpack.glb"), &phong_shader),
-    // };
 
     SDL_Event event;
     float     elapsed_time = 0.0f;
@@ -123,7 +112,7 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
 
         eyeball.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
         guitar_backpack.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
-        bmw.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+        psx_bed.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
 
         window.SwapBuffers();
     }

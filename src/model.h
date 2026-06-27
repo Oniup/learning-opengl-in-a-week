@@ -43,6 +43,15 @@ private:
     VertexBuffer          m_VertexBuffer;
 };
 
+enum ModeLoadingFlags
+{
+    ModelLoading_None                        = 0,
+    ModelLoading_ApplyGammaCorrectionSRGB    = 1 << 1,
+    ModelLoading_FlipUVs                     = 1 << 2,
+    ModelLoading_GenSmoothNormals            = 1 << 3,
+    ModelLoading_DisableTransformingVertices = 1 << 4,
+};
+
 class Model
 {
     struct TextureCache
@@ -52,8 +61,16 @@ class Model
     };
 
 public:
+    static constexpr unsigned DefaultFlags = ModelLoading_ApplyGammaCorrectionSRGB |
+                                             ModelLoading_FlipUVs | ModelLoading_GenSmoothNormals;
+
+    static constexpr unsigned DefaultNoFlipUVFlags = ModelLoading_ApplyGammaCorrectionSRGB |
+                                                     ModelLoading_FlipUVs |
+                                                     ModelLoading_GenSmoothNormals;
+
     Model() = default;
-    Model(std::string_view path, Shader* shader, bool flip_uvs = true);
+    Model(std::string_view path, Shader* shader, unsigned flags = DefaultFlags,
+          TextureFilter filter = TextureFilter::Linear);
     Model(std::vector<Mesh>&& meshes);
     Model(Mesh&& mesh);
 
@@ -69,15 +86,17 @@ public:
               const Transform& transform) const;
 
 private:
-    void LoadModelFromPath(std::string_view path, Shader* shader, bool flip_uvs);
-    void ProcessNode(const aiNode* node, const aiScene* scene, Shader* shader,
-                     std::string_view directory);
-    Mesh ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader,
-                     std::string_view directory);
+    void LoadModelFromPath(std::string_view path, Shader* shader, unsigned flags,
+                           TextureFilter filter);
+    void ProcessNode(const aiNode* node, const aiScene* scene, Shader* shader, unsigned flags,
+                     TextureFilter filter, std::string_view directory);
+    Mesh ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader, unsigned flags,
+                     TextureFilter filter, std::string_view directory);
 
     MaterialColorInput LoadMaterialColorInput(aiMaterial* material, const aiScene* scene, int type,
                                               const char* color_key, unsigned type_key,
-                                              unsigned index_key, std::string_view directory);
+                                              unsigned index_key, unsigned flags,
+                                              TextureFilter filter, std::string_view directory);
 
     std::vector<TextureCache> m_TextureCache;
     std::vector<Mesh>         m_Meshes;

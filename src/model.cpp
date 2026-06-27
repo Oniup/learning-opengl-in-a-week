@@ -54,9 +54,9 @@ void Mesh::Draw(const glm::mat4& projection, const glm::mat4& view,
     m_VertexBuffer.Draw(*m_Material.Shader, projection, view, transform.CreateModelMatrix());
 }
 
-Model::Model(std::string_view path, Shader* shader, bool flip_uvs)
+Model::Model(std::string_view path, Shader* shader, unsigned flags, TextureFilter filter)
 {
-    LoadModelFromPath(path, shader, flip_uvs);
+    LoadModelFromPath(path, shader, flags, filter);
 }
 
 Model::Model(std::vector<Mesh>&& meshes)
@@ -90,15 +90,20 @@ void Model::Draw(float elapsed_time, const glm::mat4& projection, const glm::mat
     }
 }
 
-void Model::LoadModelFromPath(std::string_view path, Shader* shader, bool flip_uvs)
+void Model::LoadModelFromPath(std::string_view path, Shader* shader, unsigned flags,
+                              TextureFilter filter)
 {
     ASSERT_STRING_VIEW_NULL_TERMINATED(path);
 
-    unsigned post_processing = aiProcess_Triangulate | aiProcess_JoinIdenticalVertices |
-                               aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices |
-                               aiProcess_GlobalScale;
-    if (flip_uvs)
-        post_processing |= aiProcess_FlipUVs;
+    unsigned post_processing = aiProcess_Triangulate | aiProcess_SortByPType |
+                               aiProcess_JoinIdenticalVertices | aiProcess_CalcTangentSpace;
+
+    post_processing |= (flags & ModelLoading_GenSmoothNormals) == 0 ? aiProcess_GenSmoothNormals
+                                                                    : aiProcess_GenNormals;
+    post_processing |= (flags & ModelLoading_FlipUVs) == 0 ? aiProcess_FlipUVs : 0;
+    post_processing |= (flags & ModelLoading_DisableTransformingVertices) == 0
+                           ? 0
+                           : aiProcess_PreTransformVertices;
 
     Assimp::Importer importer;
     const aiScene*   scene = importer.ReadFile(path.data(), post_processing);
@@ -120,24 +125,24 @@ void Model::LoadModelFromPath(std::string_view path, Shader* shader, bool flip_u
     // Load all children modes meshes
     m_Meshes.reserve(scene->mNumMeshes);
     m_TextureCache.reserve(20);
-    ProcessNode(scene->mRootNode, scene, shader, directory);
+    ProcessNode(scene->mRootNode, scene, shader, flags, filter, directory);
 }
 
-void Model::ProcessNode(const aiNode* node, const aiScene* scene, Shader* shader,
-                        std::string_view directory)
+void Model::ProcessNode(const aiNode* node, const aiScene* scene, Shader* shader, unsigned flags,
+                        TextureFilter filter, std::string_view directory)
 {
     for (unsigned i = 0; i < node->mNumMeshes; i++)
     {
         const aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        m_Meshes.push_back(ProcessMesh(mesh, scene, shader, directory));
+        m_Meshes.push_back(ProcessMesh(mesh, scene, shader, flags, filter, directory));
     }
 
     for (unsigned i = 0; i < node->mNumChildren; i++)
-        ProcessNode(node->mChildren[i], scene, shader, directory);
+        ProcessNode(node->mChildren[i], scene, shader, flags, filter, directory);
 }
 
-Mesh Model::ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader,
-                        std::string_view directory)
+Mesh Model::ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader, unsigned flags,
+                        TextureFilter filter, std::string_view directory)
 {
     std::vector<Vertex>   vertices;
     std::vector<unsigned> indices;
@@ -153,7 +158,11 @@ Mesh Model::ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader
         vertex.Position =
             glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 
-        vertex.Normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+        if (mesh->HasNormals())
+            vertex.Normal =
+                glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+        else
+            vertex.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
 
         vertex.Color =
             mesh->mColors[0]
@@ -177,12 +186,41 @@ Mesh Model::ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader
     {
         aiMaterial* mesh_material = scene->mMaterials[mesh->mMaterialIndex];
 
-        material.Diffuse = LoadMaterialColorInput(
-            mesh_material, scene, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE, directory);
-        material.Specular = LoadMaterialColorInput(
-            mesh_material, scene, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR, directory);
-        material.Emission = LoadMaterialColorInput(
-            mesh_material, scene, aiTextureType_EMISSIVE, AI_MATKEY_COLOR_EMISSIVE, directory);
+        // Texture maps
+        material.Diffuse  = LoadMaterialColorInput(mesh_material,
+                                                   scene,
+                                                   aiTextureType_DIFFUSE,
+                                                   AI_MATKEY_COLOR_DIFFUSE,
+                                                   flags,
+                                                   filter,
+                                                   directory);
+        material.Specular = LoadMaterialColorInput(mesh_material,
+                                                   scene,
+                                                   aiTextureType_SPECULAR,
+                                                   AI_MATKEY_COLOR_SPECULAR,
+                                                   flags,
+                                                   filter,
+                                                   directory);
+        material.Emission = LoadMaterialColorInput(mesh_material,
+                                                   scene,
+                                                   aiTextureType_EMISSIVE,
+                                                   AI_MATKEY_COLOR_EMISSIVE,
+                                                   flags,
+                                                   filter,
+                                                   directory);
+        // Shininess
+        float shininess;
+        if (mesh_material->Get(AI_MATKEY_SHININESS, shininess) == aiReturn_SUCCESS)
+        {
+            material.Shininess = shininess > 1.0f ? static_cast<int>(shininess) : 32;
+        }
+
+        // Tiling factor
+        aiUVTransform uv_transform;
+        if (mesh_material->Get(AI_MATKEY_UVTRANSFORM(aiTextureType_DIFFUSE, 0), uv_transform))
+        {
+            material.TilingFactor = glm::vec2(uv_transform.mScaling.x, uv_transform.mScaling.y);
+        }
     }
 
     return Mesh(std::move(vertices), std::move(indices), std::move(material));
@@ -190,7 +228,8 @@ Mesh Model::ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader
 
 MaterialColorInput Model::LoadMaterialColorInput(aiMaterial* material, const aiScene* scene,
                                                  int type, const char* color_key, unsigned type_key,
-                                                 unsigned index_key, std::string_view directory)
+                                                 unsigned index_key, unsigned flags,
+                                                 TextureFilter filter, std::string_view directory)
 {
     if (material->GetTextureCount((aiTextureType)type) > 0)
     {
@@ -203,24 +242,34 @@ MaterialColorInput Model::LoadMaterialColorInput(aiMaterial* material, const aiS
                 return cache.Texture;
         }
 
+        const char* texture_loading_type;
+
         const aiTexture* embedded_texture = scene->GetEmbeddedTexture(path.C_Str());
         Texture          texture;
         if (embedded_texture)
         {
+            texture_loading_type = "embedded";
             if (embedded_texture->mHeight == 0)
             {
                 texture = Texture(reinterpret_cast<unsigned char*>(embedded_texture->pcData),
                                   embedded_texture->mWidth,
-                                  false);
+                                  flags & ModelLoading_ApplyGammaCorrectionSRGB,
+                                  false,
+                                  filter);
             }
             else
                 FATAL("Uncompressed embedded textures are not supported");
         }
         else
         {
-            texture =
-                Texture(fmt::format("{}/{:.{}}", directory, path.C_Str(), path.length), false);
+            texture_loading_type = "external";
+            texture = Texture(fmt::format("{}/{:.{}}", directory, path.C_Str(), path.length),
+                              flags & ModelLoading_ApplyGammaCorrectionSRGB,
+                              false,
+                              filter);
         }
+
+        fmt::print("Loading {} texture at path {}\n", texture_loading_type, path.C_Str());
 
         m_TextureCache.push_back(TextureCache{
             .Path    = path.C_Str(),
