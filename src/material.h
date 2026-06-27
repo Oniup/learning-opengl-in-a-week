@@ -2,14 +2,12 @@
 
 #include <glm/ext/vector_float3.hpp>
 
-#include <string_view>
-
 #include "shader.h"
 #include "texture.h"
 
 namespace LrnGL {
 
-void           LoadMaterialDefaults(std::string_view asset_dir);
+void           LoadMaterialDefaults();
 void           UnloadMaterialDefaults();
 const Texture& GetMaterialDefaultWhiteTexture();
 
@@ -23,6 +21,7 @@ struct MaterialColorInput
     MaterialColorInput() = default;
     MaterialColorInput(glm::vec3 color);
     MaterialColorInput(Texture&& image);
+    MaterialColorInput(const Texture& image);
     MaterialColorInput(glm::vec3 color, Texture&& image);
 };
 

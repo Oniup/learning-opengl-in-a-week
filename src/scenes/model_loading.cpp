@@ -23,15 +23,19 @@ struct Actor
 {
     Transform Transform;
     Model     Model;
+
+    void Draw(float elapsed_time, const glm::mat4& projection, const glm::mat4& view) const
+    {
+        Model.Draw(elapsed_time, projection, view, Transform);
+    }
 };
 
-int ModelLoadingMain(const std::string& asset_dir, Window& window, int argc, const char** argv)
+int ModelLoadingMain(Window& window, int argc, const char** argv)
 {
-    Shader phong_shader(fmt::format("{}/shaders/Phong.frag", asset_dir),
-                        fmt::format("{}/shaders/Phong.vert", asset_dir));
+    Shader phong_shader(GetAssetPath("shaders/Phong.frag"), GetAssetPath("shaders/Phong.vert"));
     InitializeMaterialTextureUniforms(phong_shader);
 
-    LightManager light_manager(asset_dir);
+    LightManager light_manager;
     light_manager.PushLight(LightData{
         .Type            = LightData::Directional,
         .Direction       = glm::vec3(1.0f, -1.0f, 0.0f),
@@ -48,12 +52,12 @@ int ModelLoadingMain(const std::string& asset_dir, Window& window, int argc, con
     Mesh mesh = Mesh(ShapeVertexData::GenerateSphere(20, 20),
                      Material{
                          .Shader    = &phong_shader,
-                         .Diffuse   = Texture(fmt::format("{}/textures/eyeball.png", asset_dir)),
+                         .Diffuse   = Texture(GetAssetPath("textures/eyeball.png")),
                          .Specular  = glm::vec3(1.0f),
                          .Shininess = 32,
                      });
 
-    Actor eyeball = Actor{
+    Actor eyeball{
         .Transform =
             Transform{
                 .Position = glm::vec3(-2.0f, 0.0f, 0.0f),
@@ -62,11 +66,37 @@ int ModelLoadingMain(const std::string& asset_dir, Window& window, int argc, con
         .Model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
                       Material{
                           .Shader    = &phong_shader,
-                          .Diffuse   = Texture(fmt::format("{}/textures/eyeball.png", asset_dir)),
+                          .Diffuse   = Texture(GetAssetPath("textures/eyeball.png")),
                           .Specular  = glm::vec3(1.0f),
                           .Shininess = 32,
                       }),
     };
+
+    Actor guitar_backpack{
+        .Transform =
+            Transform{
+                .Position = glm::vec3(2.0f, 0.0f, 0.0f),
+            },
+        .Model = Model(GetAssetPath("models/backpack/backpack.obj"), &phong_shader, false),
+    };
+
+    Actor bmw{
+        .Transform =
+            Transform{
+                .Position = glm::vec3(10.0f, 0.0f, 0.0f),
+                .Scale    = glm::vec3(0.01f),
+            },
+        .Model = Model(GetAssetPath("models/bmw/bmw.obj"), &phong_shader, false),
+    };
+
+    // Actor guitar_backpack{
+    //     .Transform =
+    //         Transform{
+    //             .Position = glm::vec3(2.0f, 0.0f, 0.0f),
+    //             .Scale    = glm::vec3(0.01f),
+    //         },
+    //     .Model = Model(GetAssetPath("models/survival_guitar_backpack.glb"), &phong_shader),
+    // };
 
     SDL_Event event;
     float     elapsed_time = 0.0f;
@@ -85,14 +115,15 @@ int ModelLoadingMain(const std::string& asset_dir, Window& window, int argc, con
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 view_matrix = glm::mat4(1.0f);
-        view_matrix           = camera.CreateViewMatrix();
+        glm::mat4 view = glm::mat4(1.0f);
+        view           = camera.CreateViewMatrix();
 
-        light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view_matrix);
+        light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
         light_manager.PushLightInfoToShader(phong_shader, camera.GetPosition());
 
-        eyeball.Model.Draw(
-            elapsed_time, camera.GetProjectionMatrix(), view_matrix, eyeball.Transform);
+        eyeball.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+        guitar_backpack.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+        bmw.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
 
         window.SwapBuffers();
     }

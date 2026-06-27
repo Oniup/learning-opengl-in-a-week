@@ -1,16 +1,54 @@
 #include "utilities.h"
 
 #include <SDL3/SDL_timer.h>
+#include <fmt/base.h>
+#include <fmt/format.h>
 #include <glad/gl.h>
 #include <imgui.h>
+
+#include <string>
 
 #include "camera.h"
 #include "window.h"
 
 namespace LrnGL {
 
-bool RenderWireframeMode = false;
-bool MouseHidden         = false;
+bool        RenderWireframeMode = false;
+bool        MouseHidden         = false;
+std::string AssetDirectory;
+
+std::string_view GetOpenGLErrorCodeAsString(unsigned error)
+{
+    switch (error)
+    {
+    case GL_NO_ERROR:                      return "GL_NO_ERROR";
+    case GL_INVALID_ENUM:                  return "GL_INVALID_ENUM";
+    case GL_INVALID_VALUE:                 return "GL_INVALID_VALUE";
+    case GL_INVALID_OPERATION:             return "GL_INVALID_OPERATION";
+    case GL_STACK_OVERFLOW:                return "GL_STACK_OVERFLOW";
+    case GL_STACK_UNDERFLOW:               return "GL_STACK_UNDERFLOW";
+    case GL_OUT_OF_MEMORY:                 return "GL_OUT_OF_MEMORY";
+    case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION";
+    default:                               return "GL_UNKNOWN_ERROR";
+    }
+}
+
+void SetAssetDirectory(std::string_view directory)
+{
+    AssetDirectory = std::string(directory);
+}
+
+std::string GetAssetPath(std::string_view path)
+{
+    return fmt::format("{}/{}", AssetDirectory, path);
+}
+
+std::string_view GetAssetPath(char* buffer, size_t buffer_length, std::string_view path)
+{
+    auto result = fmt::format_to_n(buffer, buffer_length, "{}/{}", AssetDirectory, path);
+    *result.out = '\0';
+    return std::string_view(buffer, result.size);
+}
 
 glm::vec3 RGBToNormalized(unsigned r, unsigned g, unsigned b)
 {

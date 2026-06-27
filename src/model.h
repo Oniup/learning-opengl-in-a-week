@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string>
+
 #include "material.h"
+#include "texture.h"
 #include "transform.h"
 #include "vertex_buffer.h"
 
@@ -42,9 +45,15 @@ private:
 
 class Model
 {
+    struct TextureCache
+    {
+        std::string Path;
+        Texture     Texture;
+    };
+
 public:
     Model() = default;
-    Model(std::string_view path, Shader* shader);
+    Model(std::string_view path, Shader* shader, bool flip_uvs = true);
     Model(std::vector<Mesh>&& meshes);
     Model(Mesh&& mesh);
 
@@ -60,17 +69,18 @@ public:
               const Transform& transform) const;
 
 private:
-    void LoadModelFromPath(std::string_view path, Shader* shader);
+    void LoadModelFromPath(std::string_view path, Shader* shader, bool flip_uvs);
     void ProcessNode(const aiNode* node, const aiScene* scene, Shader* shader,
                      std::string_view directory);
     Mesh ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader,
                      std::string_view directory);
 
-    MaterialColorInput LoadMaterialColorInput(aiMaterial* material, int type, const char* color_key,
-                                              unsigned type_key, unsigned index_key,
-                                              std::string_view directory);
+    MaterialColorInput LoadMaterialColorInput(aiMaterial* material, const aiScene* scene, int type,
+                                              const char* color_key, unsigned type_key,
+                                              unsigned index_key, std::string_view directory);
 
-    std::vector<Mesh> m_Meshes;
+    std::vector<TextureCache> m_TextureCache;
+    std::vector<Mesh>         m_Meshes;
 };
 
 } // namespace LrnGL

@@ -9,6 +9,7 @@
 #include <tuple>
 
 #include "transform.h"
+#include "utilities.h"
 
 namespace LrnGL {
 
@@ -33,9 +34,8 @@ namespace Internal {
 
 } // namespace Internal
 
-LightManager::LightManager(const std::string& asset_dir)
-    : m_LightDebugShader(fmt::format("{}/shaders/Light.frag", asset_dir),
-                         fmt::format("{}/shaders/Light.vert", asset_dir)),
+LightManager::LightManager()
+    : m_LightDebugShader(GetAssetPath("shaders/Light.frag"), GetAssetPath("shaders/Light.vert")),
       m_Buffer(ShapeVertexData::GenerateSphere(10, 10))
 {
 }
@@ -103,8 +103,8 @@ void LightManager::PushLightInfoToShader(Shader& shader, glm::vec3 camera_positi
     shader.Uniform("u_CameraPosition", camera_position);
     shader.Uniform("u_GlobalAmbientLight", m_GlobalAmbientLight);
 
-    size_t buffer_length = 50;
-    char   name_buffer[buffer_length];
+    constexpr size_t buffer_length = 50;
+    char             name_buffer[buffer_length];
 
     auto get_location = [&name_buffer, buffer_length](unsigned         index,
                                                       std::string_view field) -> const char*

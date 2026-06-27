@@ -1,8 +1,8 @@
 #pragma once
 
-#include <SDL3/SDL_pixels.h>
-
 #include <string_view>
+
+struct SDL_Surface;
 
 namespace LrnGL {
 
@@ -20,7 +20,10 @@ public:
     static Texture Invalid;
 
     Texture() = default;
-    Texture(std::string_view path, TextureFilter filter = TextureFilter::Linear);
+    Texture(std::string_view path, bool flip_vertically = true,
+            TextureFilter filter = TextureFilter::Linear);
+    Texture(const unsigned char* buffer, unsigned buffer_length, bool flip_vertically = true,
+            TextureFilter filter = TextureFilter::Linear);
     ~Texture();
 
     Texture(const Texture& texture);
@@ -36,6 +39,8 @@ public:
     int      GetHeight() const { return m_Height; }
 
 private:
+    void LoadFromSurface(SDL_Surface* surface, bool flip_vertically, TextureFilter filter);
+
     unsigned m_ID     = 0;
     int      m_Width  = 0;
     int      m_Height = 0;

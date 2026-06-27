@@ -4,6 +4,7 @@
 #include <assimp/material.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <assimp/texture.h>
 #include <assimp/types.h>
 #include <fmt/format.h>
 
@@ -53,9 +54,9 @@ void Mesh::Draw(const glm::mat4& projection, const glm::mat4& view,
     m_VertexBuffer.Draw(*m_Material.Shader, projection, view, transform.CreateModelMatrix());
 }
 
-Model::Model(std::string_view path, Shader* shader)
+Model::Model(std::string_view path, Shader* shader, bool flip_uvs)
 {
-    LoadModelFromPath(path, shader);
+    LoadModelFromPath(path, shader, flip_uvs);
 }
 
 Model::Model(std::vector<Mesh>&& meshes)
@@ -75,7 +76,7 @@ Model::Model(Model&& other)
 
 Model& Model::operator=(Model&& other)
 {
-    m_Meshes = std::move(m_Meshes);
+    m_Meshes = std::move(other.m_Meshes);
     return *this;
 }
 
@@ -89,29 +90,36 @@ void Model::Draw(float elapsed_time, const glm::mat4& projection, const glm::mat
     }
 }
 
-void Model::LoadModelFromPath(std::string_view path, Shader* shader)
+void Model::LoadModelFromPath(std::string_view path, Shader* shader, bool flip_uvs)
 {
     ASSERT_STRING_VIEW_NULL_TERMINATED(path);
 
-    Assimp::Importer importer;
-    const aiScene*   scene = importer.ReadFile(path.data(), aiProcess_Triangulate);
+    unsigned post_processing = aiProcess_Triangulate | aiProcess_JoinIdenticalVertices |
+                               aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices |
+                               aiProcess_GlobalScale;
+    if (flip_uvs)
+        post_processing |= aiProcess_FlipUVs;
 
-    if (!scene | scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+    Assimp::Importer importer;
+    const aiScene*   scene = importer.ReadFile(path.data(), post_processing);
+
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
         ERROR("Failed to load model from path {}: {}", path, importer.GetErrorString());
         return;
     }
 
     // Make sure directory ends with null terminator
-    size_t dir_buffer_length = 1024;
-    char   dir_buffer[dir_buffer_length];
-    auto   result = fmt::format_to_n(
+    constexpr size_t dir_buffer_length = 1024;
+    char             dir_buffer[dir_buffer_length];
+    auto             result = fmt::format_to_n(
         dir_buffer, dir_buffer_length, "{}", path.substr(0, path.find_last_of('/')));
     *result.out = '\0';
     std::string_view directory(dir_buffer, result.size);
 
     // Load all children modes meshes
     m_Meshes.reserve(scene->mNumMeshes);
+    m_TextureCache.reserve(20);
     ProcessNode(scene->mRootNode, scene, shader, directory);
 }
 
@@ -140,14 +148,21 @@ Mesh Model::ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader
 
     for (unsigned i = 0; i < mesh->mNumVertices; i++)
     {
-        Vertex vertex = {
-            .Position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z),
-            .Normal   = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z),
-            .Color    = glm::vec3(mesh->mColors[i]->r, mesh->mColors[i]->g, mesh->mColors[i]->b),
-            .TexCoords = mesh->mTextureCoords[0]
-                             ? glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y)
-                             : glm::vec2(0.0f),
-        };
+        Vertex vertex;
+
+        vertex.Position =
+            glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+
+        vertex.Normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+
+        vertex.Color =
+            mesh->mColors[0]
+                ? glm::vec3(mesh->mColors[0][i].r, mesh->mColors[0][i].g, mesh->mColors[0][i].b)
+                : glm::vec3(1.0f);
+
+        vertex.TexCoords = mesh->mTextureCoords[0] ? glm::vec2(mesh->mTextureCoords[0][i].x,
+                                                               mesh->mTextureCoords[0][i].y)
+                                                   : glm::vec2(0.0f);
         vertices.push_back(vertex);
     }
 
@@ -163,32 +178,63 @@ Mesh Model::ProcessMesh(const aiMesh* mesh, const aiScene* scene, Shader* shader
         aiMaterial* mesh_material = scene->mMaterials[mesh->mMaterialIndex];
 
         material.Diffuse = LoadMaterialColorInput(
-            mesh_material, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE, directory);
+            mesh_material, scene, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE, directory);
         material.Specular = LoadMaterialColorInput(
-            mesh_material, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR, directory);
+            mesh_material, scene, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR, directory);
         material.Emission = LoadMaterialColorInput(
-            mesh_material, aiTextureType_EMISSIVE, AI_MATKEY_COLOR_EMISSIVE, directory);
+            mesh_material, scene, aiTextureType_EMISSIVE, AI_MATKEY_COLOR_EMISSIVE, directory);
     }
 
     return Mesh(std::move(vertices), std::move(indices), std::move(material));
 }
 
-MaterialColorInput Model::LoadMaterialColorInput(aiMaterial* material, int type,
-                                                 const char* color_key, unsigned type_key,
+MaterialColorInput Model::LoadMaterialColorInput(aiMaterial* material, const aiScene* scene,
+                                                 int type, const char* color_key, unsigned type_key,
                                                  unsigned index_key, std::string_view directory)
 {
     if (material->GetTextureCount((aiTextureType)type) > 0)
     {
         aiString path;
         material->GetTexture((aiTextureType)type, 0, &path);
-        return Texture(fmt::format("{}/{:.{}}", directory, path.C_Str(), path.length));
+
+        for (const TextureCache& cache : m_TextureCache)
+        {
+            if (cache.Path == std::string_view(path.C_Str(), path.length))
+                return cache.Texture;
+        }
+
+        const aiTexture* embedded_texture = scene->GetEmbeddedTexture(path.C_Str());
+        Texture          texture;
+        if (embedded_texture)
+        {
+            if (embedded_texture->mHeight == 0)
+            {
+                texture = Texture(reinterpret_cast<unsigned char*>(embedded_texture->pcData),
+                                  embedded_texture->mWidth,
+                                  false);
+            }
+            else
+                FATAL("Uncompressed embedded textures are not supported");
+        }
+        else
+        {
+            texture =
+                Texture(fmt::format("{}/{:.{}}", directory, path.C_Str(), path.length), false);
+        }
+
+        m_TextureCache.push_back(TextureCache{
+            .Path    = path.C_Str(),
+            .Texture = std::move(texture),
+        });
+
+        return m_TextureCache.back().Texture;
     }
 
     aiColor3D color(1.0f, 1.0f, 1.0f);
     if (material->Get(color_key, type_key, index_key, color) == aiReturn_SUCCESS)
         return MaterialColorInput(glm::vec3(color.r, color.g, color.b));
 
-    return MaterialColorInput(glm::vec3(aiTextureType_DIFFUSE ? 1.0f : 0.0f));
+    return MaterialColorInput(glm::vec3(type == aiTextureType_DIFFUSE ? 1.0f : 0.0f));
 }
 
 } // namespace LrnGL

@@ -6,6 +6,7 @@
 #include "error.h"
 #include "material.h"
 #include "scenes/scenes.h"
+#include "utilities.h"
 #include "window.h"
 
 namespace fs = std::filesystem;
@@ -30,15 +31,15 @@ std::string GetAssetDirectory(std::string_view target = "assets")
 
 int main(int argc, const char** argv)
 {
-    std::string asset_dir = GetAssetDirectory();
-    Window      window;
+    SetAssetDirectory(GetAssetDirectory());
+    Window window;
 
     glEnable(GL_DEPTH_TEST);
 
-    LoadMaterialDefaults(asset_dir);
+    LoadMaterialDefaults();
 
-    // PhongMain(asset_dir, window, argc, argv);
-    ModelLoadingMain(asset_dir, window, argc, argv);
+    // PhongMain(window, argc, argv);
+    ModelLoadingMain(window, argc, argv);
 
     UnloadMaterialDefaults();
     return 0;

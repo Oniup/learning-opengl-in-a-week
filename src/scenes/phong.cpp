@@ -20,7 +20,7 @@
 
 namespace LrnGL {
 
-struct Object
+struct Actor
 {
     enum Type
     {
@@ -32,32 +32,31 @@ struct Object
     Transform Transform;
 };
 
-int PhongMain(const std::string& asset_dir, Window& window, int argc, const char** argv)
+int PhongMain(Window& window, int argc, const char** argv)
 {
-    Shader phong_shader(fmt::format("{}/shaders/Phong.frag", asset_dir),
-                        fmt::format("{}/shaders/Phong.vert", asset_dir));
+    Shader phong_shader(GetAssetPath("shaders/Phong.frag"), GetAssetPath("shaders/Phong.vert"));
     InitializeMaterialTextureUniforms(phong_shader);
 
-    Object objects[] = {
-        Object{Object::Eyeball, Transform{{0.0f, 0.0f, 0.0f}}},
-        Object{Object::Box, Transform{{2.0f, 5.0f, -15.0f}}},
-        Object{Object::Eyeball, Transform{{-1.5f, -2.2f, -2.5f}}},
-        Object{Object::Box, Transform{{-3.8f, -2.0f, -12.3f}}},
-        Object{Object::Eyeball, Transform{{2.4f, -0.4f, -3.5f}}},
-        Object{Object::Eyeball, Transform{{-1.7f, 3.0f, -7.5f}}},
-        Object{Object::Eyeball, Transform{{1.3f, -2.0f, -2.5f}}},
-        Object{Object::Box, Transform{{1.5f, 2.0f, -2.5f}}},
-        Object{Object::Box, Transform{{1.5f, 0.2f, -1.5f}}},
-        Object{Object::Box, Transform{{-1.3f, 1.0f, -1.5f}}},
+    Actor objects[] = {
+        Actor{Actor::Eyeball, Transform{{0.0f, 0.0f, 0.0f}}},
+        Actor{Actor::Box, Transform{{2.0f, 5.0f, -15.0f}}},
+        Actor{Actor::Eyeball, Transform{{-1.5f, -2.2f, -2.5f}}},
+        Actor{Actor::Box, Transform{{-3.8f, -2.0f, -12.3f}}},
+        Actor{Actor::Eyeball, Transform{{2.4f, -0.4f, -3.5f}}},
+        Actor{Actor::Eyeball, Transform{{-1.7f, 3.0f, -7.5f}}},
+        Actor{Actor::Eyeball, Transform{{1.3f, -2.0f, -2.5f}}},
+        Actor{Actor::Box, Transform{{1.5f, 2.0f, -2.5f}}},
+        Actor{Actor::Box, Transform{{1.5f, 0.2f, -1.5f}}},
+        Actor{Actor::Box, Transform{{-1.3f, 1.0f, -1.5f}}},
     };
 
     std::random_device                    rand_device;
     std::mt19937                          gen(rand_device());
     std::uniform_real_distribution<float> rand_rotation(0.0f, 2 * std::numbers::pi);
     std::uniform_real_distribution<float> rand_scale(0.5f, 2.0f);
-    for (unsigned i = 1; i < sizeof(objects) / sizeof(Object); i++)
+    for (unsigned i = 1; i < sizeof(objects) / sizeof(Actor); i++)
     {
-        Object& object = objects[i];
+        Actor& object = objects[i];
 
         object.Transform.Scale = glm::vec3(rand_scale(gen), rand_scale(gen), rand_scale(gen));
         object.Transform.Rotation =
@@ -68,16 +67,16 @@ int PhongMain(const std::string& asset_dir, Window& window, int argc, const char
         // Eyeball
         Material{
             .Shader    = &phong_shader,
-            .Diffuse   = Texture(fmt::format("{}/textures/eyeball.png", asset_dir)),
+            .Diffuse   = Texture(GetAssetPath("textures/eyeball.png")),
             .Specular  = glm::vec3(1.0f),
             .Shininess = 32,
         },
         // Box
         Material{
             .Shader    = &phong_shader,
-            .Diffuse   = Texture(fmt::format("{}/textures/container2.png", asset_dir)),
-            .Specular  = Texture(fmt::format("{}/textures/container2_specular2.png", asset_dir)),
-            .Emission  = Texture(fmt::format("{}/textures/matrix.jpg", asset_dir)),
+            .Diffuse   = Texture(GetAssetPath("textures/container2.png")),
+            .Specular  = Texture(GetAssetPath("textures/container2_specular2.png")),
+            .Emission  = Texture(GetAssetPath("textures/matrix.jpg")),
             .Shininess = 128,
         },
     };
@@ -87,7 +86,7 @@ int PhongMain(const std::string& asset_dir, Window& window, int argc, const char
         VertexBuffer((ShapeVertexData::GetCube())),
     };
 
-    LightManager light_manager(asset_dir);
+    LightManager light_manager;
     // Camera light
     light_manager.PushLight(LightData{
         .Type            = LightData::Spot,
@@ -142,7 +141,7 @@ int PhongMain(const std::string& asset_dir, Window& window, int argc, const char
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view_matrix);
         light_manager.PushLightInfoToShader(phong_shader, camera.GetPosition());
 
-        for (const Object& object : objects)
+        for (const Actor& object : objects)
         {
             glm::mat4     model_matrix = object.Transform.CreateModelMatrix();
             Material&     material     = materials[object.Type];

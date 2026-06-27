@@ -4,7 +4,6 @@
 #include <glm/ext/vector_float3.hpp>
 #include <glm/trigonometric.hpp>
 
-#include <string>
 #include <vector>
 
 #include "shader.h"
@@ -44,7 +43,7 @@ struct LightData
 class LightManager
 {
 public:
-    LightManager(const std::string& asset_dir);
+    LightManager();
 
     void       PushLight(LightData&& light);
     LightData* GetLight(unsigned index);

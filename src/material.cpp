@@ -3,6 +3,8 @@
 #include <fmt/format.h>
 #include <glad/gl.h>
 
+#include "utilities.h"
+
 namespace LrnGL {
 
 namespace Internal {
@@ -11,9 +13,9 @@ namespace Internal {
 
 } // namespace Internal
 
-void LoadMaterialDefaults(std::string_view asset_dir)
+void LoadMaterialDefaults()
 {
-    Internal::WhiteTexture = Texture(fmt::format("{}/textures/default.png", asset_dir));
+    Internal::WhiteTexture = Texture(GetAssetPath("textures/default.png"));
 }
 
 void UnloadMaterialDefaults()
@@ -41,6 +43,12 @@ MaterialColorInput::MaterialColorInput(glm::vec3 color)
 MaterialColorInput::MaterialColorInput(Texture&& image)
     : Color(glm::vec3(1.0f)),
       Image(std::move(image))
+{
+}
+
+MaterialColorInput::MaterialColorInput(const Texture& image)
+    : Color(glm::vec3(1.0f)),
+      Image(image)
 {
 }
 
