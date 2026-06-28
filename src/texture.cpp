@@ -30,7 +30,7 @@ Texture::Texture(const unsigned char* buffer, unsigned buffer_length, bool srgb_
     SDL_Surface*  loaded_surface = IMG_Load_IO(stream, 1);
     ASSERT(loaded_surface, "Failed to load image from buffer data: {}", SDL_GetError());
 
-    LoadFromSurface(loaded_surface, flip_vertically, srgb_correction, filter);
+    LoadFromSurface(loaded_surface, srgb_correction, flip_vertically, filter);
 
     SDL_DestroySurface(loaded_surface);
 }

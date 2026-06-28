@@ -39,7 +39,7 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
     LightManager light_manager;
     light_manager.PushLight(LightData{
         .Type            = LightData::Directional,
-        .Direction       = glm::vec3(1.0f, -1.0f, -1.0f),
+        .Direction       = glm::vec3(1.0f, -1.0f, 0.0f),
         .ShowDebugVisual = true,
     });
     light_manager.PushLight(LightData{
@@ -74,17 +74,14 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
             GetAssetPath("models/backpack/backpack.obj"), &phong_shader, ModelLoading_FlipUVs),
     };
 
-    Actor psx_bed{
+    Actor robot{
         .Transform =
             Transform{
                 .Position = glm::vec3(6.0f, -1.0f, 0.0f),
-                // .Scale    = glm::vec3(0.01f),
             },
-        // .Model = Model(GetAssetPath("models/psx-house/props/bed.glb"),
         .Model = Model(GetAssetPath("models/soldier/soldier.fbx"),
                        &phong_shader,
-                       ModelLoading_FlipUVs | ModelLoading_ApplyGammaCorrectionSRGB |
-                           ModelLoading_DisableTransformingVertices),
+                       ModelLoading_DisableTransformingVertices),
     };
 
     SDL_Event event;
@@ -112,7 +109,7 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
 
         eyeball.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
         guitar_backpack.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
-        psx_bed.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+        robot.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
 
         window.SwapBuffers();
     }

@@ -123,7 +123,7 @@ void main()
     vec4 specular_texture = texture(u_Material.Specular.Image, TexCoords);
     vec4 emission_texture = texture(u_Material.Emission.Image, TexCoords);
 
-    float emission_pulse = (sin(5 * u_Time) * 0.25 + 0.75);
+    float emission_pulse = (sin(u_Time) * 0.25 + 0.75);
 
     vec3 diffuse  = diffuse_light * diffuse_texture.rgb * u_Material.Diffuse.Color;
     vec3 specular = specular_light * specular_texture.rgb * u_Material.Specular.Color;
