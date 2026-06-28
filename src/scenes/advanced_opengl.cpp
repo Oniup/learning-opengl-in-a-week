@@ -60,17 +60,18 @@ struct AdvancedOpenGLOptions
 
 int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 {
-    glEnable(GL_DEPTH_TEST);
-
     // Base Phong Shader
     // bool   enable_fog = false;
     // Shader shader(GetAssetPath("shaders/phong.frag"), GetAssetPath("shaders/phong.vert"));
 
     // Phong Shader with Fog
     bool   enable_fog = true;
-    Shader shader(GetAssetPath("shaders/phong_with_fog.frag"), GetAssetPath("shaders/phong.vert"));
+    Shader phong_shader(GetAssetPath("shaders/phong_with_fog.frag"),
+                        GetAssetPath("shaders/phong.vert"));
+    Shader outline_shader(GetAssetPath("shaders/flat_color.frag"),
+                          GetAssetPath("shaders/basic.vert"));
 
-    InitializeMaterialTextureUniforms(shader);
+    InitializeMaterialTextureUniforms(phong_shader);
 
     LightManager light_manager;
     light_manager.PushLight(LightData{
@@ -96,7 +97,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
                 },
             .Model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
                           Material{
-                              .Shader    = &shader,
+                              .Shader    = &phong_shader,
                               .Diffuse   = Texture(GetAssetPath("textures/eyeball.png"), false),
                               .Specular  = glm::vec3(1.0f),
                               .Shininess = 256,
@@ -108,8 +109,8 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
                 {
                     .Position = glm::vec3(2.0f, 0.0f, 0.0f),
                 },
-            .Model =
-                Model(GetAssetPath("models/backpack/backpack.obj"), &shader, ModelLoading_FlipUVs),
+            .Model = Model(
+                GetAssetPath("models/backpack/backpack.obj"), &phong_shader, ModelLoading_FlipUVs),
         },
         // Floor
         Actor{.Transform =
@@ -121,7 +122,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
               .Model =
                   Mesh(ShapeVertexData::GetPlane(),
                        Material{
-                           .Shader   = &shader,
+                           .Shader   = &phong_shader,
                            .Diffuse  = Texture(GetAssetPath("textures/wood-floor/diffuse.png")),
                            .Specular = Texture(GetAssetPath("textures/wood-floor/specular.png")),
                            .TilingFactor = glm::vec2(3.0f),
@@ -129,7 +130,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
                        })},
     };
 
-    AdvancedOpenGLOptions fog;
+    AdvancedOpenGLOptions opts;
 
     SDL_Event event;
     float     elapsed_time = 0.0f;
@@ -144,24 +145,48 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         }
         camera.UpdatePosition(delta);
 
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_STENCIL_TEST);
+        glEnable(GL_DEPTH_TEST);
 
         glm::mat4 view = glm::mat4(1.0f);
         view           = camera.CreateViewMatrix();
 
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+        // Draw outline, setup stencil buffer and writing options
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF); // All fragments should pass the stencil test
+        glStencilMask(0xFF);               // Enable writing to the stencil buffer
+
         light_manager.EditLightPropertiesMenu();
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
-        light_manager.PushLightInfoToShader(shader, camera.GetPosition());
+        light_manager.PushLightInfoToShader(phong_shader, camera.GetPosition());
 
         if (enable_fog)
         {
-            fog.Edit();
-            fog.PushInfoToShader(shader, camera.GetNearPlane(), camera.GetFarPlane());
+            opts.Edit();
+            opts.PushInfoToShader(phong_shader, camera.GetNearPlane(), camera.GetFarPlane());
         }
 
         for (const Actor& actor : actors)
             actor.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+
+        // Draw outline
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00); // Disable writing to the stencil buffer
+        glDisable(GL_DEPTH_TEST);
+
+        outline_shader.Uniform("u_FlatColor", glm::vec3(1.0f, 0.0f, 0.0f));
+
+        for (Actor& actor : actors)
+        {
+            actor.Model.SetShaderToAllMaterials(&outline_shader);
+            actor.Transform.Scale += glm::vec3(0.1f);
+            actor.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+            actor.Model.SetShaderToAllMaterials(&phong_shader);
+            actor.Transform.Scale -= glm::vec3(0.1f);
+        }
 
         window.SwapBuffers();
     }

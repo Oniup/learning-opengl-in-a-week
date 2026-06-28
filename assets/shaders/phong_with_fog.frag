@@ -44,6 +44,14 @@ uniform int   u_LightCount;
 uniform Light u_Lights[10];
 uniform vec3  u_GlobalAmbientLight;
 
+// Fog
+uniform float u_Near;
+uniform float u_Far;
+uniform float u_FogDensity;
+uniform vec3  u_FogColor;
+uniform bool  u_ViewDepthBuffer;
+uniform bool  u_SquareFog;
+
 // Other
 uniform Material u_Material;
 uniform float    u_Time;
@@ -53,13 +61,6 @@ in vec3 Color;
 in vec3 Normal;
 in vec2 TexCoords;
 in vec3 FragPosition;
-
-uniform float u_Near;
-uniform float u_Far;
-uniform float u_FogDensity;
-uniform vec3  u_FogColor;
-uniform bool  u_ViewDepthBuffer;
-uniform bool  u_SquareFog;
 
 float LinearizeDepth(float depth)
 {

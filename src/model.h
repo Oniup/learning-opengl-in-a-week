@@ -82,6 +82,7 @@ public:
 
     const std::vector<Mesh>& GetMeshes() const { return m_Meshes; }
 
+    void SetShaderToAllMaterials(Shader* shader);
     void Draw(float elapsed_time, const glm::mat4& projection, const glm::mat4& view,
               const Transform& transform) const;
 

@@ -80,6 +80,12 @@ Model& Model::operator=(Model&& other)
     return *this;
 }
 
+void Model::SetShaderToAllMaterials(Shader* shader)
+{
+    for (Mesh& mesh : m_Meshes)
+        mesh.GetMaterial().Shader = shader;
+}
+
 void Model::Draw(float elapsed_time, const glm::mat4& projection, const glm::mat4& view,
                  const Transform& transform) const
 {

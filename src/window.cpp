@@ -78,7 +78,7 @@ Window::Window(int width, int height)
     ImGui::CreateContext();
     ImGuiIO& io     = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad |
-                      ImGuiConfigFlags_DockingEnable;
+                      ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
 
     ImGui_ImplSDL3_InitForOpenGL(m_Window, m_Context);
     ImGui_ImplOpenGL3_Init();
@@ -144,11 +144,9 @@ bool Window::IsRunning()
 
 void Window::HandleEvents(const SDL_Event& event)
 {
-    switch (event.type)
-    {
-    case SDL_EVENT_QUIT:           m_Running = false;
-    case SDL_EVENT_WINDOW_RESIZED: UpdateViewport();
-    }
+    if (event.type == SDL_EVENT_QUIT || (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
+                                         event.window.windowID == SDL_GetWindowID(m_Window)))
+        m_Running = false;
 
     ImGui_ImplSDL3_ProcessEvent(&event);
 }
@@ -158,6 +156,7 @@ void Window::SwapBuffers()
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+    UpdateViewport();
     SDL_GL_SwapWindow(m_Window);
 }
 
@@ -167,6 +166,15 @@ void Window::UpdateViewport()
     SDL_GetWindowSize(m_Window, &width, &height);
 
     glViewport(0, 0, width, height);
+
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        SDL_Window*   backup_current_window  = SDL_GL_GetCurrentWindow();
+        SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+    }
 }
 
 } // namespace LrnGL
