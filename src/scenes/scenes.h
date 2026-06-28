@@ -11,5 +11,6 @@ class Camera;
 // Demos
 int PhongMain(Window& window, int argc, const char** argv);
 int ModelLoadingMain(Window& window, int argc, const char** argv);
+int AdvancedOpenGLMain(Window& window, int argc, const char** argv);
 
 } // namespace LrnGL

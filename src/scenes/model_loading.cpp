@@ -1,10 +1,6 @@
 #include <SDL3/SDL_events.h>
-#include <assimp/Importer.hpp>
-#include <fmt/format.h>
 #include <glad/gl.h>
-#include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/vector_float3.hpp>
-#include <glm/trigonometric.hpp>
 
 #include "camera.h"
 #include "light.h"
@@ -32,8 +28,7 @@ struct Actor
 
 int ModelLoadingMain(Window& window, int argc, const char** argv)
 {
-    Shader phong_shader(GetAssetPath("shaders/model_phong.frag"),
-                        GetAssetPath("shaders/model_phong.vert"));
+    Shader phong_shader(GetAssetPath("shaders/phong.frag"), GetAssetPath("shaders/phong.vert"));
     InitializeMaterialTextureUniforms(phong_shader);
 
     LightManager light_manager;
@@ -50,38 +45,42 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
     Camera camera(glm::vec3(0.0f, 0.0f, 6.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
 
-    Actor eyeball{
-        .Transform =
-            Transform{
-                .Position = glm::vec3(-2.0f, 0.0f, 0.0f),
-                .Rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
-            },
-        .Model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
-                      Material{
-                          .Shader    = &phong_shader,
-                          .Diffuse   = Texture(GetAssetPath("textures/eyeball.png"), false),
-                          .Specular  = glm::vec3(1.0f),
-                          .Shininess = 32,
-                      }),
-    };
+    std::array<Actor, 3> actors = {
+        // Eyeball
+        Actor{
+            .Transform =
+                Transform{
+                    .Position = glm::vec3(-2.0f, 0.0f, 0.0f),
+                    .Rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
+                },
+            .Model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
+                          Material{
+                              .Shader    = &phong_shader,
+                              .Diffuse   = Texture(GetAssetPath("textures/eyeball.png"), false),
+                              .Specular  = glm::vec3(1.0f),
+                              .Shininess = 32,
+                          }),
+        },
+        // Backpack
+        Actor{
+            .Transform =
+                Transform{
+                    .Position = glm::vec3(2.0f, 0.0f, 0.0f),
+                },
+            .Model = Model(
+                GetAssetPath("models/backpack/backpack.obj"), &phong_shader, ModelLoading_FlipUVs),
+        },
+        // Robot
+        Actor{
 
-    Actor guitar_backpack{
-        .Transform =
-            Transform{
-                .Position = glm::vec3(2.0f, 0.0f, 0.0f),
-            },
-        .Model = Model(
-            GetAssetPath("models/backpack/backpack.obj"), &phong_shader, ModelLoading_FlipUVs),
-    };
-
-    Actor robot{
-        .Transform =
-            Transform{
-                .Position = glm::vec3(6.0f, -1.0f, 0.0f),
-            },
-        .Model = Model(GetAssetPath("models/soldier/soldier.fbx"),
-                       &phong_shader,
-                       ModelLoading_DisableTransformingVertices),
+            .Transform =
+                Transform{
+                    .Position = glm::vec3(6.0f, -1.0f, 0.0f),
+                },
+            .Model = Model(GetAssetPath("models/soldier/soldier.fbx"),
+                           &phong_shader,
+                           ModelLoading_DisableTransformingVertices),
+        },
     };
 
     SDL_Event event;
@@ -107,9 +106,8 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
         light_manager.PushLightInfoToShader(phong_shader, camera.GetPosition());
 
-        eyeball.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
-        guitar_backpack.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
-        robot.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+        for (const Actor& actor : actors)
+            actor.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
 
         window.SwapBuffers();
     }

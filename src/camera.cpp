@@ -33,7 +33,7 @@ Camera::Camera(glm::vec3 position, float move_speed, float sensitivity, glm::vec
 void Camera::InitializeProjection(const Window& window)
 {
     m_Projection = glm::perspective(
-        glm::radians(m_FOV), (float)window.GetWidth() / (float)window.GetHeight(), 0.1f, 100.0f);
+        glm::radians(m_FOV), (float)window.GetWidth() / (float)window.GetHeight(), m_Near, m_Far);
 }
 
 void Camera::UpdateProjectionMatrix(bool is_hiding_mouse, const SDL_Event& event,

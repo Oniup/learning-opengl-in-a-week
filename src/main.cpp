@@ -39,7 +39,8 @@ int main(int argc, const char** argv)
     LoadMaterialDefaults();
 
     // PhongMain(window, argc, argv);
-    ModelLoadingMain(window, argc, argv);
+    // ModelLoadingMain(window, argc, argv);
+    AdvancedOpenGLMain(window, argc, argv);
 
     UnloadMaterialDefaults();
     return 0;

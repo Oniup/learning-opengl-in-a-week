@@ -121,17 +121,14 @@ void main()
 
     vec4 diffuse_texture  = texture(u_Material.Diffuse.Image, TexCoords);
     vec4 specular_texture = texture(u_Material.Specular.Image, TexCoords);
-    vec4 emission_texture = texture(u_Material.Emission.Image, TexCoords + vec2(0.0, 0.3 * u_Time));
+    vec4 emission_texture = texture(u_Material.Emission.Image, TexCoords);
 
-    float emission_pulse = (sin(u_Time) * 0.5 + 0.5);
+    float emission_pulse = (sin(u_Time) * 0.25 + 0.75);
 
     vec3 diffuse  = diffuse_light * diffuse_texture.rgb * u_Material.Diffuse.Color;
     vec3 specular = specular_light * specular_texture.rgb * u_Material.Specular.Color;
-    vec3 emission = emission_texture.rgb * u_Material.Emission.Color * emission_pulse;
+    vec3 emission = emission_texture.rgb * emission_pulse * u_Material.Emission.Color;
     vec3 ambient  = ambient_light * diffuse_texture.rgb;
 
-    if (specular_texture.rgb != vec3(0.0))
-        emission = vec3(0.0);
-
-    FragColor = vec4(diffuse + specular + ambient + emission, diffuse_texture.a);
+    FragColor = vec4(diffuse + specular + emission + ambient, diffuse_texture.a);
 }

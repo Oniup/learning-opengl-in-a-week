@@ -45,6 +45,11 @@ void LightManager::SetGlobalAmbientLight(glm::vec3 color)
     m_GlobalAmbientLight = color;
 }
 
+void LightManager::ShouldRenderDebugInfo(bool render)
+{
+    m_RenderDebugInfo = render;
+}
+
 void LightManager::PushLight(LightData&& light)
 {
     m_LightData.push_back(std::move(light));

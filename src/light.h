@@ -49,6 +49,7 @@ public:
     LightData* GetLight(unsigned index);
 
     void SetGlobalAmbientLight(glm::vec3 color);
+    void ShouldRenderDebugInfo(bool render);
     void EditLightPropertiesMenu();
 
     void PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_position);
