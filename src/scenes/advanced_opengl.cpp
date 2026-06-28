@@ -30,7 +30,7 @@ struct Actor
     }
 };
 
-struct Fog
+struct AdvancedOpenGLOptions
 {
     glm::vec3 Color           = glm::vec3(0.1f);
     float     Density         = 0.03f;
@@ -129,7 +129,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
                        })},
     };
 
-    Fog fog;
+    AdvancedOpenGLOptions fog;
 
     SDL_Event event;
     float     elapsed_time = 0.0f;

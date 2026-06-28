@@ -35,6 +35,7 @@ Window::Window(int width, int height)
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     SDL_DisplayID          display_id   = SDL_GetPrimaryDisplay();
     const SDL_DisplayMode* display_mode = SDL_GetCurrentDisplayMode(display_id);
@@ -76,7 +77,8 @@ Window::Window(int width, int height)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io     = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad |
+                      ImGuiConfigFlags_DockingEnable;
 
     ImGui_ImplSDL3_InitForOpenGL(m_Window, m_Context);
     ImGui_ImplOpenGL3_Init();

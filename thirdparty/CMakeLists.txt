@@ -19,7 +19,7 @@ add_subdirectory(assimp)
 
 add_library(imgui STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_demo.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_demo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_draw.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_internal.h
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_tables.cpp
