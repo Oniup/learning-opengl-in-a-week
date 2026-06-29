@@ -18,7 +18,7 @@ uniform vec2 u_Material_TilingFactor;
 
 void main()
 {
-    vec4 position = vec4(a_Position.xyz, 1.0);
+    vec4 position = vec4(a_Position, 1.0);
     gl_Position   = u_Projection * u_View * u_Model * position;
 
     Color        = a_Color;
