@@ -14,6 +14,17 @@ enum class TextureFilter
     NoMipmapNearest,
 };
 
+enum class TextureFilterWrapping
+{
+    Repeat,
+    MirroredRepeat,
+    ClampToEdge,
+};
+
+enum class TextureWrap
+{
+};
+
 class Texture
 {
 public:
@@ -21,9 +32,11 @@ public:
 
     Texture() = default;
     Texture(std::string_view path, bool srgb_correction = false, bool flip_vertically = true,
-            TextureFilter filter = TextureFilter::Linear);
+            TextureFilter         filter   = TextureFilter::Linear,
+            TextureFilterWrapping wrapping = TextureFilterWrapping::Repeat);
     Texture(const unsigned char* buffer, unsigned buffer_length, bool srgb_correction = false,
-            bool flip_vertically = true, TextureFilter filter = TextureFilter::Linear);
+            bool flip_vertically = true, TextureFilter filter = TextureFilter::Linear,
+            TextureFilterWrapping wrapping = TextureFilterWrapping::Repeat);
     ~Texture();
 
     Texture(const Texture& texture);
@@ -40,7 +53,7 @@ public:
 
 private:
     void LoadFromSurface(SDL_Surface* loaded_surface, bool srgb_correction, bool flip_vertically,
-                         TextureFilter filter);
+                         TextureFilter filter, TextureFilterWrapping wrapping);
 
     unsigned m_ID     = 0;
     int      m_Width  = 0;

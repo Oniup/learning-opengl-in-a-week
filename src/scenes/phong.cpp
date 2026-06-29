@@ -136,8 +136,7 @@ int PhongMain(Window& window, int argc, const char** argv)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 view_matrix = glm::mat4(1.0f);
-        view_matrix           = camera.CreateViewMatrix();
+        glm::mat4 view_matrix = camera.CreateViewMatrix();
 
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view_matrix);
         light_manager.PushLightInfoToShader(phong_shader, camera.GetPosition());

@@ -22,6 +22,8 @@ public:
     float     GetNearPlane() const { return m_Near; }
     float     GetFarPlane() const { return m_Far; }
 
+    void SetPosition(glm::vec3 position) { m_Position = position; }
+
     const glm::mat4& GetProjectionMatrix() const { return m_Projection; }
 
     void InitializeProjection(const Window& window);

@@ -23,8 +23,8 @@ ShapeVertexData ShapeVertexData::GetPlane(glm::vec3 color)
     };
     std::vector<unsigned> indices = {
         // clang-format off
-            0, 1, 3, // first triangle
-            1, 2, 3  // second triangle
+        0, 1, 2, // First triangle
+        0, 2, 3, // Second triangle
         // clang-format on
     };
     return ShapeVertexData{
@@ -153,15 +153,15 @@ ShapeVertexData ShapeVertexData::GenerateSphere(unsigned subdivisions, unsigned 
             unsigned current_vertex = i * (subdivisions + 1) + j;
             unsigned below_vertex   = current_vertex + subdivisions + 1;
 
-            // triangle 1
-            mesh.Indices.push_back(current_vertex);     // top left
-            mesh.Indices.push_back(below_vertex);       // bot left
-            mesh.Indices.push_back(current_vertex + 1); // top right
+            // Triangle 1
+            mesh.Indices.push_back(current_vertex);     // Top left
+            mesh.Indices.push_back(current_vertex + 1); // Top right
+            mesh.Indices.push_back(below_vertex);       // Bottom left
 
-            // triangle 2
-            mesh.Indices.push_back(current_vertex + 1); // top right
-            mesh.Indices.push_back(below_vertex);       // bot left
-            mesh.Indices.push_back(below_vertex + 1);   // bot right
+            // Triangle 2
+            mesh.Indices.push_back(current_vertex + 1); // Top Right
+            mesh.Indices.push_back(below_vertex + 1);   // Bottom Right
+            mesh.Indices.push_back(below_vertex);       // Bottom Left
         }
     }
 

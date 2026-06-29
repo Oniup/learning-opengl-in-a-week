@@ -67,6 +67,7 @@ void CommonEventHandles(const SDL_Event& event, Window& window, Camera& camera, 
         switch (event.key.key)
         {
         case SDLK_F1:     ToggleRenderWireframeMode(); break;
+        case SDLK_F2:     camera.SetPosition(glm::vec3(0.0f, 0.0f, -7.0f)); break;
         case SDLK_ESCAPE: ToggleCursorHiddenMode(window); break;
         }
     }

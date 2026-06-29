@@ -6,12 +6,14 @@
 #include <imgui.h>
 
 #include <array>
+#include <map>
 
 #include "camera.h"
 #include "light.h"
 #include "material.h"
 #include "model.h"
 #include "scenes/scenes.h"
+#include "texture.h"
 #include "transform.h"
 #include "utilities.h"
 #include "vertex_buffer.h"
@@ -23,7 +25,9 @@ struct Actor
 {
     Transform Transform;
     Model     Model;
-    bool      DrawOutline = false;
+    bool      DrawOutline  = false;
+    bool      CullFaces    = true;
+    int       CullFaceType = GL_BACK;
 
     void Draw(float elapsed_time, const glm::mat4& projection, const glm::mat4& view) const
     {
@@ -47,7 +51,7 @@ struct AdvancedOpenGLOptions
         bool      DrawOutline = true;
         bool      IgnoreDepth = false;
         float     ScaleFactor = 0.05f;
-        glm::vec3 Color       = RGBToNormalized(170, 68, 31);
+        glm::vec4 Color       = glm::vec4(0.667f, 0.267f, 0.122f, 1.000f);
     } Stencil;
 
     void PushInfoToShader(Shader& shader, float near, float far)
@@ -76,11 +80,15 @@ struct AdvancedOpenGLOptions
             ImGui::Checkbox("Draw outline", &Stencil.DrawOutline);
             ImGui::Checkbox("Ignore depth", &Stencil.IgnoreDepth);
             ImGui::DragFloat("Scale factor", &Stencil.ScaleFactor, 0.01f, 0.0f, 1.0f);
-            ImGui::ColorEdit3("Stencil flat color", glm::value_ptr(Stencil.Color));
+            ImGui::ColorEdit4("Stencil flat color", glm::value_ptr(Stencil.Color));
         }
         ImGui::End();
     }
 };
+
+void InitializeGrass(std::vector<Actor>& actors)
+{
+}
 
 int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 {
@@ -90,7 +98,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 
     // Phong Shader with Fog
     bool   enable_fog = true;
-    Shader phong_shader(GetAssetPath("shaders/phong_with_fog.frag"),
+    Shader phong_shader(GetAssetPath("shaders/advanced_phong.frag"),
                         GetAssetPath("shaders/phong.vert"));
     Shader outline_shader(GetAssetPath("shaders/flat_color.frag"),
                           GetAssetPath("shaders/basic.vert"));
@@ -108,15 +116,32 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         .Color    = RGBToNormalized(215, 188, 133),
     });
 
-    Camera camera(glm::vec3(0.0f, 0.0f, 6.0f), 5.0f, 0.01f);
+    Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
 
-    std::array<Actor, 3> actors = {
+    std::array<Actor, 6> actors = {
+        // Floor
+        Actor{
+            .Transform =
+                {
+                    .Position = glm::vec3(0.0f, -3.0f, 0.0f),
+                    .Scale    = glm::vec3(20.0f, 20.0f, 1.0f),
+                    .Rotation = glm::vec3(glm::radians(90.0f), 0.0f, 0.0f),
+                },
+            .Model = Mesh(ShapeVertexData::GetPlane(),
+                          Material{
+                              .Shader   = &phong_shader,
+                              .Diffuse  = Texture(GetAssetPath("textures/wood-floor/diffuse.png")),
+                              .Specular = Texture(GetAssetPath("textures/wood-floor/specular.png")),
+                              .TilingFactor = glm::vec2(3.0f),
+                              .Shininess    = 10,
+                          }),
+        },
         // Sphere
         Actor{
             .Transform =
                 {
-                    .Position = glm::vec3(-2.0f, 0.0f, 0.0f),
+                    .Position = glm::vec3(-2.1f, 0.0f, 0.0f),
                     .Rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
                 },
             .Model       = Mesh(ShapeVertexData::GenerateSphere(20, 20),
@@ -137,26 +162,68 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
             .Model = Model(
                 GetAssetPath("models/backpack/backpack.obj"), &phong_shader, ModelLoading_FlipUVs),
         },
-        // Floor
+        // Grass
         Actor{
             .Transform =
                 {
-                    .Position = glm::vec3(0.0f, -3.0f, 0.0f),
-                    .Scale    = glm::vec3(20.0f, 20.0f, 1.0f),
-                    .Rotation = glm::vec3(glm::radians(90.0f), 0.0f, 0.0f),
+                    .Position = glm::vec3(0.0f, -2.5f, 2.0f),
+                },
+            .Model     = Mesh(ShapeVertexData::GetPlane(),
+                              Material{
+                                  .Shader  = &phong_shader,
+                                  .Diffuse = Texture(GetAssetPath("textures/grass.png"),
+                                                     false,
+                                                     true,
+                                                     TextureFilter::Linear,
+                                                     TextureFilterWrapping::ClampToEdge),
+                              }),
+            .CullFaces = false,
+        },
+        // Windows
+        Actor{
+            .Transform =
+                {
+                    .Position = glm::vec3(0.0f, 0.0f, 1.0f),
                 },
             .Model = Mesh(ShapeVertexData::GetPlane(),
-                          Material{
-                              .Shader   = &phong_shader,
-                              .Diffuse  = Texture(GetAssetPath("textures/wood-floor/diffuse.png")),
-                              .Specular = Texture(GetAssetPath("textures/wood-floor/specular.png")),
-                              .TilingFactor = glm::vec2(3.0f),
-                              .Shininess    = 10,
-                          }),
+                          Material{Material{
+                              .Shader  = &phong_shader,
+                              .Diffuse = Texture(GetAssetPath("textures/transparent_window.png"),
+                                                 false,
+                                                 true,
+                                                 TextureFilter::Linear,
+                                                 TextureFilterWrapping::ClampToEdge),
+                          }}),
+            .CullFaces = false,
+        },
+        Actor{
+            .Transform =
+                {
+                    .Position = glm::vec3(0.0f, 0.0f, 2.0f),
+                },
+            .Model = Mesh(ShapeVertexData::GetPlane(),
+                          Material{Material{
+                              .Shader  = &phong_shader,
+                              .Diffuse = Texture(GetAssetPath("textures/transparent_window.png"),
+                                                 false,
+                                                 true,
+                                                 TextureFilter::Linear,
+                                                 TextureFilterWrapping::ClampToEdge),
+                          }}),
+            .CullFaces = false,
         },
     };
 
     AdvancedOpenGLOptions opts;
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
 
     SDL_Event event;
     float     elapsed_time = 0.0f;
@@ -171,11 +238,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         }
         camera.UpdatePosition(delta);
 
-        glm::mat4 view = glm::mat4(1.0f);
-        view           = camera.CreateViewMatrix();
-
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_STENCIL_TEST);
+        glm::mat4 view = camera.CreateViewMatrix();
 
         glStencilMask(0xFF);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -192,18 +255,37 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
             opts.PushInfoToShader(phong_shader, camera.GetNearPlane(), camera.GetFarPlane());
         }
 
+        std::map<float, Actor*> sorted_render_order;
+        for (unsigned i = 1; i < actors.size(); i++)
+        {
+            glm::vec3 direction         = actors[i].Transform.Position - camera.GetPosition();
+            float     length_sqr        = glm::dot(direction, direction);
+            float     length            = glm::length(direction);
+            sorted_render_order[length] = &actors[i];
+        }
+        sorted_render_order[10000.0f] = &actors[0]; // Set floor to be first last
+
         // Draw body
         glStencilOp(GL_KEEP,               // Stencil fails
                     GL_KEEP,               // Stencil passes, Depth fails
                     GL_REPLACE);           // Both stencil and depth passes
         glStencilFunc(GL_ALWAYS, 1, 0xFF); // All fragments should pass the stencil test
-        for (const Actor& actor : actors)
+        for (auto iter = sorted_render_order.rbegin(); iter != sorted_render_order.rend(); iter++)
         {
-            if (actor.DrawOutline)
+            Actor* actor = iter->second;
+
+            if (actor->CullFaces)
+            {
+                glEnable(GL_CULL_FACE);
+                glCullFace(actor->CullFaceType);
+            }
+            else
+                glDisable(GL_CULL_FACE);
+
+            if (actor->DrawOutline)
                 glStencilMask(0xFF); // Enable writing to the stencil buffer
-            actor.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+            actor->Draw(elapsed_time, camera.GetProjectionMatrix(), view);
             glStencilMask(0x00); // Disable writing to stencil buffer
-            // glDisable(GL_STENCIL_TEST);
         }
 
         // Draw outline
@@ -217,16 +299,18 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
             glStencilFunc(type, 1, 0xFF); // Check if ref is not equal to the mask
             glStencilMask(0x00);          // Disable writing to the stencil buffer
 
-            for (Actor& actor : actors)
+            for (auto iter = sorted_render_order.rbegin(); iter != sorted_render_order.rend();
+                 iter++)
             {
-                if (!actor.DrawOutline)
+                Actor* actor = iter->second;
+                if (!actor->DrawOutline)
                     continue;
 
-                actor.Model.SetShaderToAllMaterials(&outline_shader);
-                actor.Transform.Scale += opts.Stencil.ScaleFactor;
-                actor.Draw(elapsed_time, camera.GetProjectionMatrix(), view);
-                actor.Transform.Scale -= opts.Stencil.ScaleFactor;
-                actor.Model.SetShaderToAllMaterials(&phong_shader);
+                actor->Model.SetShaderToAllMaterials(&outline_shader);
+                actor->Transform.Scale += opts.Stencil.ScaleFactor;
+                actor->Draw(elapsed_time, camera.GetProjectionMatrix(), view);
+                actor->Transform.Scale -= opts.Stencil.ScaleFactor;
+                actor->Model.SetShaderToAllMaterials(&phong_shader);
             }
             glEnable(GL_DEPTH_TEST);
         }

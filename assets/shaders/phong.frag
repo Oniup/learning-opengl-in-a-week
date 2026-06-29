@@ -125,10 +125,10 @@ void main()
 
     float emission_pulse = (sin(u_Time) * 0.25 + 0.75);
 
-    vec3 diffuse  = diffuse_light * diffuse_texture.rgb * u_Material.Diffuse.Color;
-    vec3 specular = specular_light * specular_texture.rgb * u_Material.Specular.Color;
+    vec3 diffuse  = diffuse_texture.rgb * diffuse_light * u_Material.Diffuse.Color;
+    vec3 specular = specular_texture.rgb * specular_light * u_Material.Specular.Color;
     vec3 emission = emission_texture.rgb * emission_pulse * u_Material.Emission.Color;
-    vec3 ambient  = ambient_light * diffuse_texture.rgb;
+    vec3 ambient  = diffuse_texture.rgb * ambient_light;
 
     FragColor = vec4(diffuse + specular + emission + ambient, diffuse_texture.a);
 }

@@ -13,24 +13,24 @@ namespace LrnGL {
 Texture Texture::Invalid;
 
 Texture::Texture(std::string_view path, bool srgb_correction, bool flip_vertically,
-                 TextureFilter filter)
+                 TextureFilter filter, TextureFilterWrapping wrapping)
 {
     SDL_Surface* loaded_surface = IMG_Load(path.data());
     ASSERT(loaded_surface, "Failed to load image from '{}'", path);
 
-    LoadFromSurface(loaded_surface, srgb_correction, flip_vertically, filter);
+    LoadFromSurface(loaded_surface, srgb_correction, flip_vertically, filter, wrapping);
 
     SDL_DestroySurface(loaded_surface);
 }
 
 Texture::Texture(const unsigned char* buffer, unsigned buffer_length, bool srgb_correction,
-                 bool flip_vertically, TextureFilter filter)
+                 bool flip_vertically, TextureFilter filter, TextureFilterWrapping wrapping)
 {
     SDL_IOStream* stream         = SDL_IOFromConstMem(buffer, buffer_length);
     SDL_Surface*  loaded_surface = IMG_Load_IO(stream, 1);
     ASSERT(loaded_surface, "Failed to load image from buffer data: {}", SDL_GetError());
 
-    LoadFromSurface(loaded_surface, srgb_correction, flip_vertically, filter);
+    LoadFromSurface(loaded_surface, srgb_correction, flip_vertically, filter, wrapping);
 
     SDL_DestroySurface(loaded_surface);
 }
@@ -92,7 +92,8 @@ void Texture::Destroy()
 }
 
 void Texture::LoadFromSurface(SDL_Surface* loaded_surface, bool srgb_correction,
-                              bool flip_vertically, TextureFilter filter)
+                              bool flip_vertically, TextureFilter filter,
+                              TextureFilterWrapping wrapping)
 {
     if (flip_vertically)
         SDL_FlipSurface(loaded_surface, SDL_FLIP_VERTICAL);
@@ -128,8 +129,16 @@ void Texture::LoadFromSurface(SDL_Surface* loaded_surface, bool srgb_correction,
         break;
     }
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    int wrapping_filter;
+    switch (wrapping)
+    {
+    case TextureFilterWrapping::Repeat:         wrapping_filter = GL_REPEAT; break;
+    case TextureFilterWrapping::MirroredRepeat: wrapping_filter = GL_MIRRORED_REPEAT; break;
+    case TextureFilterWrapping::ClampToEdge:    wrapping_filter = GL_CLAMP_TO_EDGE; break;
+    }
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapping_filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapping_filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
 
