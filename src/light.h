@@ -53,6 +53,7 @@ public:
     void EditLightPropertiesMenu();
 
     void PushLightInfoToShader(Shader& obj_shader, glm::vec3 camera_position);
+    void PushLightInfoToUniformBlockLayout(Shader& obj_shader, glm::vec3 camera_position);
     void DrawDebugInfo(const glm::mat4& projection, const glm::mat4& view);
 
 private:

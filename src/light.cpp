@@ -145,6 +145,10 @@ void LightManager::PushLightInfoToShader(Shader& shader, glm::vec3 camera_positi
     }
 }
 
+void LightManager::PushLightInfoToUniformBlockLayout(Shader& obj_shader, glm::vec3 camera_position)
+{
+}
+
 void LightManager::DrawDebugInfo(const glm::mat4& projection, const glm::mat4& view)
 {
     if (!m_RenderDebugInfo)
