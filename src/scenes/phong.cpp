@@ -89,13 +89,14 @@ int PhongMain(Window& window, int argc, const char** argv)
 
     LightManager light_manager;
     // Camera light
-    light_manager.PushLight(LightData{
-        .Type            = LightData::Spot,
-        .Position        = glm::vec3(3.0f, 3.0f, 3.0f),
-        .Linear          = 0.07f,
-        .Quadratic       = 0.017f,
-        .ShowDebugVisual = true,
-    });
+    light_manager.PushLight(
+        LightData{
+            .Type      = LightData::Spot,
+            .Linear    = 0.07f,
+            .Quadratic = 0.017f,
+            .Position  = glm::vec3(3.0f, 3.0f, 3.0f),
+        },
+        false);
     light_manager.PushLight(LightData{
         .Position = glm::vec3(3.0f, 3.0f, 3.0f),
         .Color    = RGBToNormalized(215, 188, 133),

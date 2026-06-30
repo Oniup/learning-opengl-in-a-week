@@ -32,11 +32,12 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
     InitializeMaterialTextureUniforms(phong_shader);
 
     LightManager light_manager;
-    light_manager.PushLight(LightData{
-        .Type            = LightData::Directional,
-        .Direction       = glm::vec3(1.0f, -1.0f, 0.0f),
-        .ShowDebugVisual = true,
-    });
+    light_manager.PushLight(
+        LightData{
+            .Type      = LightData::Directional,
+            .Direction = glm::vec3(1.0f, -1.0f, 0.0f),
+        },
+        false);
     light_manager.PushLight(LightData{
         .Position = glm::vec3(3.0f, 3.0f, 3.0f),
         .Color    = RGBToNormalized(215, 188, 133),

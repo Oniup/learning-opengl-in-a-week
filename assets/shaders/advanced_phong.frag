@@ -6,24 +6,6 @@
 
 out vec4 FragColor;
 
-struct Light
-{
-    int   Type;
-    vec3  Position;
-    vec3  Direction;
-    float Intensity;
-
-    float Constant;
-    float Linear;
-    float Quadratic;
-    float SpotCutOff;
-    float SpotOuterCutOff;
-
-    vec3 Color;
-    vec3 Ambient;
-    vec3 Specular;
-};
-
 struct MaterialColorInput
 {
     vec3      Color;
@@ -38,11 +20,35 @@ struct Material
     float              Shininess;
 };
 
+struct Light
+{
+    int   Type;            // 0
+    float Intensity;       // 4
+    float SpotCutOff;      // 8
+    float SpotOuterCutOff; // 12
+
+    float Constant;  // 16
+    float Linear;    // 20
+    float Quadratic; // 24
+
+    vec3 Position;  // 32
+    vec3 Direction; // 48
+
+    vec3 Color;    // 64
+    vec3 Ambient;  // 80
+    vec3 Specular; // 96
+};
+
 // Lights
-uniform vec3  u_CameraPosition;
-uniform int   u_LightCount;
-uniform Light u_Lights[10];
-uniform vec3  u_GlobalAmbientLight;
+layout(std140, binding = 0) uniform LightData
+{
+    Light u_Lights[10];
+};
+
+uniform vec3 u_CameraPosition;
+uniform int  u_LightCount;
+// uniform Light u_Lights[10];
+uniform vec3 u_GlobalAmbientLight;
 
 // Fog
 uniform float u_Near;

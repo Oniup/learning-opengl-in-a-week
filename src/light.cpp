@@ -2,12 +2,14 @@
 
 #include <fmt/base.h>
 #include <fmt/format.h>
+#include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 
 #include <algorithm>
 #include <tuple>
 
+#include "error.h"
 #include "transform.h"
 #include "utilities.h"
 
@@ -34,10 +36,27 @@ namespace Internal {
 
 } // namespace Internal
 
-LightManager::LightManager()
+LightManager::LightManager(bool initialize_uniform_buffer)
     : m_LightDebugShader(GetAssetPath("shaders/Light.frag"), GetAssetPath("shaders/Light.vert")),
       m_Buffer(ShapeVertexData::GenerateSphere(10, 10))
 {
+    if (initialize_uniform_buffer)
+    {
+        glGenBuffers(1, &m_UniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_UniformBuffer);
+        glBufferData(
+            GL_UNIFORM_BUFFER, sizeof(LightData) * MaxLightCount, nullptr, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+}
+
+LightManager::~LightManager()
+{
+    if (m_UniformBuffer != 0)
+    {
+        glDeleteBuffers(1, &m_UniformBuffer);
+        m_UniformBuffer = 0;
+    }
 }
 
 void LightManager::SetGlobalAmbientLight(glm::vec3 color)
@@ -50,9 +69,19 @@ void LightManager::ShouldRenderDebugInfo(bool render)
     m_RenderDebugInfo = render;
 }
 
-void LightManager::PushLight(LightData&& light)
+void LightManager::PushLight(LightData&& light, bool show_debug_visualization)
 {
     m_LightData.push_back(std::move(light));
+    m_ShowLightDebugVisual.push_back(show_debug_visualization);
+    m_UpdateLightUniformBuffer = true;
+}
+
+void LightManager::RemoveLight(unsigned index)
+{
+    ASSERT(index < m_LightData.size(), "index out of range");
+    m_LightData.erase(m_LightData.begin() + index);
+    m_ShowLightDebugVisual.erase(m_ShowLightDebugVisual.begin() + index);
+    m_UpdateLightUniformBuffer = true;
 }
 
 LightData* LightManager::GetLight(unsigned index)
@@ -67,6 +96,7 @@ void LightManager::EditLightPropertiesMenu()
     ImGui::Begin("Light Control");
     ImGui::Checkbox("Render Light Debug Info", &m_RenderDebugInfo);
 
+    unsigned changes = 0;
     if (m_RenderDebugInfo)
     {
         for (unsigned i = 0; i < m_LightData.size(); i++)
@@ -78,27 +108,29 @@ void LightManager::EditLightPropertiesMenu()
             if (ImGui::CollapsingHeader(type))
             {
                 if (ImGui::Button("Remove"))
-                    m_LightData.erase(m_LightData.begin() + i);
+                    RemoveLight(i);
                 else
                 {
-                    EditLightProperties(light);
-                    EditLightColor(light);
-                    EditLightAttenuationProperties(light);
+                    changes += EditLightProperties(light, i);
+                    changes += EditLightColor(light);
+                    changes += EditLightAttenuationProperties(light);
                 }
             }
 
             ImGui::PopID();
         }
 
-        if (m_LightData.size() < 10)
+        if (m_LightData.size() < MaxLightCount)
         {
             ImGui::NewLine();
 
             if (ImGui::Button("Add Light"))
-                m_LightData.push_back(LightData{});
+                PushLight(LightData{});
         }
     }
 
+    if (!m_UpdateLightUniformBuffer)
+        m_UpdateLightUniformBuffer = changes > 0;
     ImGui::End();
 }
 
@@ -145,8 +177,20 @@ void LightManager::PushLightInfoToShader(Shader& shader, glm::vec3 camera_positi
     }
 }
 
-void LightManager::PushLightInfoToUniformBlockLayout(Shader& obj_shader, glm::vec3 camera_position)
+void LightManager::PushLightInfoToUniformBlockLayout(Shader& shader, glm::vec3 camera_position)
 {
+    if (m_UpdateLightUniformBuffer)
+    {
+        glBindBuffer(GL_UNIFORM_BUFFER, m_UniformBuffer);
+        glBufferSubData(
+            GL_UNIFORM_BUFFER, 0, sizeof(LightData) * m_LightData.size(), m_LightData.data());
+        m_UpdateLightUniformBuffer = false;
+    }
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_UniformBuffer);
+    shader.Uniform("u_LightCount", static_cast<int>(m_LightData.size()));
+    shader.Uniform("u_CameraPosition", camera_position);
+    shader.Uniform("u_GlobalAmbientLight", m_GlobalAmbientLight);
 }
 
 void LightManager::DrawDebugInfo(const glm::mat4& projection, const glm::mat4& view)
@@ -154,9 +198,10 @@ void LightManager::DrawDebugInfo(const glm::mat4& projection, const glm::mat4& v
     if (!m_RenderDebugInfo)
         return;
 
-    for (const LightData& light : m_LightData)
+    for (unsigned i = 0; i < m_LightData.size(); i++)
     {
-        if (light.Type == LightData::Directional || !light.ShowDebugVisual)
+        const LightData& light = m_LightData[i];
+        if (light.Type == LightData::Directional || !m_ShowLightDebugVisual[i])
             continue;
 
         Transform transform{
@@ -170,36 +215,43 @@ void LightManager::DrawDebugInfo(const glm::mat4& projection, const glm::mat4& v
     }
 }
 
-void LightManager::EditLightProperties(LightData& light)
+unsigned LightManager::EditLightProperties(LightData& light, unsigned index)
 {
-    ImGui::Combo(
+    unsigned c = 0;
+
+    c += ImGui::Combo(
         "Type", &light.Type, Internal::LightTypeNames.data(), Internal::LightTypeNames.size());
 
     ImGui::SeparatorText("Properties");
-    ImGui::Checkbox("Show debug visual", &light.ShowDebugVisual);
-    ImGui::DragFloat("Intensity", &light.Intensity, 0.1f);
+    bool show                      = m_ShowLightDebugVisual[index];
+    c                             += ImGui::Checkbox("Show debug visual", &show);
+    m_ShowLightDebugVisual[index]  = show;
+
+    c += ImGui::DragFloat("Intensity", &light.Intensity, 0.1f);
 
     switch (light.Type)
     {
     case LightData::Point:
-        ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
+        c += ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
         break;
     case LightData::Spot:
-        ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
-        ImGui::SliderFloat("Cut Off", &light.SpotCutOff, 0.0f, 90.0f);
-        ImGui::SliderFloat("Outer Cut Off", &light.SpotOuterCutOff, 0.0f, 90.0f);
-        ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction), 0.1f, -1.0f, 1.0f);
+        c += ImGui::DragFloat3("Position", glm::value_ptr(light.Position), 0.1f);
+        c += ImGui::SliderFloat("Cut Off", &light.SpotCutOff, 0.0f, 90.0f);
+        c += ImGui::SliderFloat("Outer Cut Off", &light.SpotOuterCutOff, 0.0f, 90.0f);
+        c += ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction), 0.1f, -1.0f, 1.0f);
         break;
     case LightData::Directional:
-        ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction), 0.1f, -1.0f, 1.0f);
+        c += ImGui::DragFloat3("Direction", glm::value_ptr(light.Direction), 0.1f, -1.0f, 1.0f);
         break;
     }
 
     light.Intensity = std::max(light.Intensity, 0.0f);
+    return c;
 }
 
-void LightManager::EditLightAttenuationProperties(LightData& light)
+unsigned LightManager::EditLightAttenuationProperties(LightData& light)
 {
+    unsigned c = 0;
     if (ImGui::CollapsingHeader("Attenuation"))
     {
         if (ImGui::BeginCombo("Select default distance", "select a distance..."))
@@ -208,20 +260,21 @@ void LightManager::EditLightAttenuationProperties(LightData& light)
             {
                 if (ImGui::Selectable(distance))
                 {
-                    light.Constant  = constant;
-                    light.Linear    = linear;
-                    light.Quadratic = quadratic;
+                    c               += 1;
+                    light.Constant   = constant;
+                    light.Linear     = linear;
+                    light.Quadratic  = quadratic;
                 }
             }
             ImGui::EndCombo();
         }
 
-        ImGui::SliderFloat("Constant", &light.Constant, 0.0f, 1.0f);
-        ImGui::SliderFloat("Linear", &light.Linear, 0.0f, 1.0f, "%0.4f");
-        ImGui::SliderFloat("Quadratic", &light.Quadratic, 0.0f, 0.1f, "%0.6f");
+        c += ImGui::SliderFloat("Constant", &light.Constant, 0.0f, 1.0f);
+        c += ImGui::SliderFloat("Linear", &light.Linear, 0.0f, 1.0f, "%0.4f");
+        c += ImGui::SliderFloat("Quadratic", &light.Quadratic, 0.0f, 0.1f, "%0.6f");
 
         static float preview_distance = 50.0f;
-        ImGui::SliderFloat("Preview Distance", &preview_distance, 10.0f, 200.0f);
+        c += ImGui::SliderFloat("Preview Distance", &preview_distance, 10.0f, 200.0f);
 
         // Generate curve
         const unsigned point_resolution = 100;
@@ -243,14 +296,17 @@ void LightManager::EditLightAttenuationProperties(LightData& light)
                          1.0f,
                          ImVec2(0.0f, 150.0f));
     }
+    return c;
 }
 
-void LightManager::EditLightColor(LightData& light)
+unsigned LightManager::EditLightColor(LightData& light)
 {
+    unsigned c = 0;
     ImGui::SeparatorText("Light Color");
-    ImGui::ColorEdit3("Color", glm::value_ptr(light.Color));
-    ImGui::ColorEdit3("Ambient", glm::value_ptr(light.Ambient));
-    ImGui::ColorEdit3("Specular", glm::value_ptr(light.Specular));
+    c += ImGui::ColorEdit3("Color", glm::value_ptr(light.Color));
+    c += ImGui::ColorEdit3("Ambient", glm::value_ptr(light.Ambient));
+    c += ImGui::ColorEdit3("Specular", glm::value_ptr(light.Specular));
+    return c;
 }
 
 } // namespace LrnGL

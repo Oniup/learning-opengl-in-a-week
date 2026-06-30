@@ -268,12 +268,13 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 
     InitializeMaterialTextureUniforms(phong_shader);
 
-    LightManager light_manager;
-    light_manager.PushLight(LightData{
-        .Type            = LightData::Directional,
-        .Direction       = glm::vec3(1.0f, -1.0f, -0.4f),
-        .ShowDebugVisual = true,
-    });
+    LightManager light_manager(true);
+    light_manager.PushLight(
+        LightData{
+            .Type      = LightData::Directional,
+            .Direction = glm::vec3(1.0f, -1.0f, -0.4f),
+        },
+        false);
     light_manager.PushLight(LightData{
         .Position = glm::vec3(3.0f, 3.0f, 3.0f),
         .Color    = RGBToNormalized(215, 188, 133),
@@ -294,8 +295,6 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
-
-    // Create framebuffer
 
     SDL_Event event;
     float     elapsed_time = 0.0f;
@@ -324,7 +323,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 
         light_manager.EditLightPropertiesMenu();
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
-        light_manager.PushLightInfoToShader(phong_shader, camera.GetPosition());
+        light_manager.PushLightInfoToUniformBlockLayout(phong_shader, camera.GetPosition());
 
         if (enable_fog)
         {
