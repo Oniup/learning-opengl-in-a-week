@@ -28,8 +28,8 @@ struct Actor
         Box,
     };
 
-    Type      Type;
-    Transform Transform;
+    Type      type;
+    Transform transform;
 };
 
 int PhongMain(Window& window, int argc, const char** argv)
@@ -59,8 +59,8 @@ int PhongMain(Window& window, int argc, const char** argv)
     {
         Actor& object = objects[i];
 
-        object.Transform.Scale = glm::vec3(rand_scale(gen), rand_scale(gen), rand_scale(gen));
-        object.Transform.Rotation =
+        object.transform.Scale = glm::vec3(rand_scale(gen), rand_scale(gen), rand_scale(gen));
+        object.transform.Rotation =
             glm::vec3(rand_rotation(gen), rand_rotation(gen), rand_rotation(gen));
     }
 
@@ -103,7 +103,7 @@ int PhongMain(Window& window, int argc, const char** argv)
 
     float move_speed              = 1.0f;
     float spin_speed              = glm::radians(90.0f);
-    objects[0].Transform.Rotation = glm::vec3(0.0f, std::numbers::pi / 4, 0.0f);
+    objects[0].transform.Rotation = glm::vec3(0.0f, std::numbers::pi / 4, 0.0f);
 
     Camera camera(glm::vec3(7.0f, -3.0f, 5.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
@@ -115,9 +115,9 @@ int PhongMain(Window& window, int argc, const char** argv)
         float delta;
         CalculateDeltaTime(elapsed_time, delta);
 
-        objects[0].Transform.RotatePitch(delta * 1.5f);
-        objects[0].Transform.RotateYaw(delta * 2.0f);
-        objects[0].Transform.RotateRoll(delta * 0.5);
+        objects[0].transform.RotatePitch(delta * 1.5f);
+        objects[0].transform.RotateYaw(delta * 2.0f);
+        objects[0].transform.RotateRoll(delta * 0.5);
 
         while (SDL_PollEvent(&event))
         {
@@ -143,9 +143,9 @@ int PhongMain(Window& window, int argc, const char** argv)
 
         for (const Actor& object : objects)
         {
-            glm::mat4     model_matrix = object.Transform.CreateModelMatrix();
-            Material&     material     = materials[object.Type];
-            VertexBuffer& buffer       = vertex_buffers[object.Type];
+            glm::mat4     model_matrix = object.transform.CreateModelMatrix();
+            Material&     material     = materials[object.type];
+            VertexBuffer& buffer       = vertex_buffers[object.type];
 
             material.PushInfoToShader();
             material.Shader->Uniform("u_Time", elapsed_time);

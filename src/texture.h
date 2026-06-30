@@ -21,10 +21,6 @@ enum class TextureFilterWrapping
     ClampToEdge,
 };
 
-enum class TextureWrap
-{
-};
-
 class Texture
 {
 public:

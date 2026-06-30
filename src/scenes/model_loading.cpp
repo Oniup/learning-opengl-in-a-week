@@ -17,12 +17,12 @@ namespace LrnGL {
 
 struct Actor
 {
-    Transform Transform;
-    Model     Model;
+    Transform transform;
+    Model     model;
 
     void Draw(float elapsed_time, const glm::mat4& projection, const glm::mat4& view) const
     {
-        Model.Draw(elapsed_time, projection, view, Transform);
+        model.Draw(elapsed_time, projection, view, transform);
     }
 };
 
@@ -48,12 +48,12 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
     std::array<Actor, 3> actors = {
         // Eyeball
         Actor{
-            .Transform =
+            .transform =
                 Transform{
                     .Position = glm::vec3(-2.0f, 0.0f, 0.0f),
                     .Rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
                 },
-            .Model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
+            .model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
                           Material{
                               .Shader    = &phong_shader,
                               .Diffuse   = Texture(GetAssetPath("textures/eyeball.png"), false),
@@ -63,21 +63,21 @@ int ModelLoadingMain(Window& window, int argc, const char** argv)
         },
         // Backpack
         Actor{
-            .Transform =
+            .transform =
                 Transform{
                     .Position = glm::vec3(2.0f, 0.0f, 0.0f),
                 },
-            .Model = Model(
+            .model = Model(
                 GetAssetPath("models/backpack/backpack.obj"), &phong_shader, ModelLoading_FlipUVs),
         },
         // Robot
         Actor{
 
-            .Transform =
+            .transform =
                 Transform{
                     .Position = glm::vec3(6.0f, -1.0f, 0.0f),
                 },
-            .Model = Model(GetAssetPath("models/soldier/soldier.fbx"),
+            .model = Model(GetAssetPath("models/soldier/soldier.fbx"),
                            &phong_shader,
                            ModelLoading_DisableTransformingVertices),
         },

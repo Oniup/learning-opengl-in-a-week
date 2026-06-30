@@ -24,6 +24,7 @@ bool IsMouseHidden();
 bool IsRenderWireframeMode();
 void ToggleCursorHiddenMode(Window& window);
 void ToggleRenderWireframeMode();
+bool IsRenderingInWireframeMode();
 
 void CalculateDeltaTime(float& elapsed_time, float& delta);
 

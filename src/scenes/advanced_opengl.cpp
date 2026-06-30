@@ -5,10 +5,10 @@
 #include <glm/trigonometric.hpp>
 #include <imgui.h>
 
-#include <array>
 #include <map>
 
 #include "camera.h"
+#include "error.h"
 #include "light.h"
 #include "material.h"
 #include "model.h"
@@ -23,17 +23,33 @@ namespace LrnGL {
 
 struct Actor
 {
-    Transform Transform;
-    Model     Model;
-    bool      DrawOutline  = false;
-    bool      CullFaces    = true;
-    int       CullFaceType = GL_BACK;
+    using Array = std::array<Actor, 6>;
+    static Array CreateActors(Shader& shader);
+
+    Transform transform;
+    Model     model;
+    bool      draw_outline   = false;
+    bool      cull_faces     = true;
+    int       cull_face_type = GL_BACK;
 
     void Draw(float elapsed_time, const glm::mat4& projection, const glm::mat4& view) const
     {
-        Model.Draw(elapsed_time, projection, view, Transform);
+        model.Draw(elapsed_time, projection, view, transform);
     }
 };
+
+// clang-format off
+float framebuffer_quad_vertices[] = {
+    // positions   // texCoords
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+
+    -1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f
+};
+// clang-format on
 
 struct AdvancedOpenGLOptions
 {
@@ -86,22 +102,18 @@ struct AdvancedOpenGLOptions
     }
 };
 
-void InitializeGrass(std::vector<Actor>& actors)
-{
-}
-
 int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 {
-    // Base Phong Shader
-    // bool   enable_fog = false;
-    // Shader shader(GetAssetPath("shaders/phong.frag"), GetAssetPath("shaders/phong.vert"));
-
     // Phong Shader with Fog
     bool   enable_fog = true;
     Shader phong_shader(GetAssetPath("shaders/advanced_phong.frag"),
                         GetAssetPath("shaders/phong.vert"));
     Shader outline_shader(GetAssetPath("shaders/flat_color.frag"),
                           GetAssetPath("shaders/basic.vert"));
+    Shader framebuffer_shader(GetAssetPath("shaders/framebuffer.frag"),
+                              GetAssetPath("shaders/framebuffer.vert"));
+
+    framebuffer_shader.Uniform("u_ColorAttachment", 0);
 
     InitializeMaterialTextureUniforms(phong_shader);
 
@@ -119,101 +131,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
     Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
 
-    std::array<Actor, 6> actors = {
-        // Floor
-        Actor{
-            .Transform =
-                {
-                    .Position = glm::vec3(0.0f, -3.0f, 0.0f),
-                    .Scale    = glm::vec3(20.0f, 20.0f, 1.0f),
-                    .Rotation = glm::vec3(glm::radians(90.0f), 0.0f, 0.0f),
-                },
-            .Model = Mesh(ShapeVertexData::GetPlane(),
-                          Material{
-                              .Shader   = &phong_shader,
-                              .Diffuse  = Texture(GetAssetPath("textures/wood-floor/diffuse.png")),
-                              .Specular = Texture(GetAssetPath("textures/wood-floor/specular.png")),
-                              .TilingFactor = glm::vec2(3.0f),
-                              .Shininess    = 10,
-                          }),
-        },
-        // Sphere
-        Actor{
-            .Transform =
-                {
-                    .Position = glm::vec3(-2.1f, 0.0f, 0.0f),
-                    .Rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
-                },
-            .Model       = Mesh(ShapeVertexData::GenerateSphere(20, 20),
-                                Material{
-                                    .Shader    = &phong_shader,
-                                    .Diffuse   = Texture(GetAssetPath("textures/eyeball.png"), false),
-                                    .Specular  = glm::vec3(1.0f),
-                                    .Shininess = 256,
-                                }),
-            .DrawOutline = true,
-        },
-        // Backpack
-        Actor{
-            .Transform =
-                {
-                    .Position = glm::vec3(2.0f, 0.0f, 0.0f),
-                },
-            .Model = Model(
-                GetAssetPath("models/backpack/backpack.obj"), &phong_shader, ModelLoading_FlipUVs),
-        },
-        // Grass
-        Actor{
-            .Transform =
-                {
-                    .Position = glm::vec3(0.0f, -2.5f, 2.0f),
-                },
-            .Model     = Mesh(ShapeVertexData::GetPlane(),
-                              Material{
-                                  .Shader  = &phong_shader,
-                                  .Diffuse = Texture(GetAssetPath("textures/grass.png"),
-                                                     false,
-                                                     true,
-                                                     TextureFilter::Linear,
-                                                     TextureFilterWrapping::ClampToEdge),
-                              }),
-            .CullFaces = false,
-        },
-        // Windows
-        Actor{
-            .Transform =
-                {
-                    .Position = glm::vec3(0.0f, 0.0f, 1.0f),
-                },
-            .Model = Mesh(ShapeVertexData::GetPlane(),
-                          Material{Material{
-                              .Shader  = &phong_shader,
-                              .Diffuse = Texture(GetAssetPath("textures/transparent_window.png"),
-                                                 false,
-                                                 true,
-                                                 TextureFilter::Linear,
-                                                 TextureFilterWrapping::ClampToEdge),
-                          }}),
-            .CullFaces = false,
-        },
-        Actor{
-            .Transform =
-                {
-                    .Position = glm::vec3(0.0f, 0.0f, 2.0f),
-                },
-            .Model = Mesh(ShapeVertexData::GetPlane(),
-                          Material{Material{
-                              .Shader  = &phong_shader,
-                              .Diffuse = Texture(GetAssetPath("textures/transparent_window.png"),
-                                                 false,
-                                                 true,
-                                                 TextureFilter::Linear,
-                                                 TextureFilterWrapping::ClampToEdge),
-                          }}),
-            .CullFaces = false,
-        },
-    };
-
+    Actor::Array          actors = Actor::CreateActors(phong_shader);
     AdvancedOpenGLOptions opts;
 
     glEnable(GL_DEPTH_TEST);
@@ -225,6 +143,59 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
 
+    // Create framebuffer
+    unsigned framebuffer;
+    unsigned framebuffer_color;
+    unsigned framebuffer_depth_stencil;
+    unsigned framebuffer_vao;
+    unsigned framebuffer_vbo;
+    glGenFramebuffers(1, &framebuffer);
+    glGenTextures(1, &framebuffer_color);
+    glGenRenderbuffers(1, &framebuffer_depth_stencil);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glBindTexture(GL_TEXTURE_2D, framebuffer_color);
+    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer_depth_stencil);
+
+    // Color texture attachment
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_RGB,
+                 window.GetWidth(),
+                 window.GetHeight(),
+                 0,
+                 GL_RGB,
+                 GL_UNSIGNED_BYTE,
+                 nullptr);
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer_color, 0);
+
+    // Depth and stencil render buffer object attachment
+    glRenderbufferStorage(
+        GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window.GetWidth(), window.GetHeight());
+    glFramebufferRenderbuffer(
+        GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, framebuffer_depth_stencil);
+
+    // framebuffer creation complete
+    ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // Reset back to default framebuffer
+
+    // framebuffer quad data
+    glGenVertexArrays(1, &framebuffer_vao);
+    glGenBuffers(1, &framebuffer_vbo);
+    glBindVertexArray(framebuffer_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, framebuffer_vbo);
+    glBufferData(GL_ARRAY_BUFFER,
+                 sizeof(framebuffer_quad_vertices),
+                 framebuffer_quad_vertices,
+                 GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+
     SDL_Event event;
     float     elapsed_time = 0.0f;
     while (window.IsRunning())
@@ -235,10 +206,19 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         while (SDL_PollEvent(&event))
         {
             CommonEventHandles(event, window, camera, delta);
+            if (event.type == SDL_EVENT_WINDOW_RESIZED)
+            {
+            }
         }
         camera.UpdatePosition(delta);
 
         glm::mat4 view = camera.CreateViewMatrix();
+
+        // =========================================================================================
+        // First render pass (Rendering scene)
+        // =========================================================================================
+
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
         glStencilMask(0xFF);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -258,7 +238,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         std::map<float, Actor*> sorted_render_order;
         for (unsigned i = 1; i < actors.size(); i++)
         {
-            glm::vec3 direction         = actors[i].Transform.Position - camera.GetPosition();
+            glm::vec3 direction         = actors[i].transform.Position - camera.GetPosition();
             float     length_sqr        = glm::dot(direction, direction);
             float     length            = glm::length(direction);
             sorted_render_order[length] = &actors[i];
@@ -274,15 +254,15 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         {
             Actor* actor = iter->second;
 
-            if (actor->CullFaces)
+            if (actor->cull_faces)
             {
                 glEnable(GL_CULL_FACE);
-                glCullFace(actor->CullFaceType);
+                glCullFace(actor->cull_face_type);
             }
             else
                 glDisable(GL_CULL_FACE);
 
-            if (actor->DrawOutline)
+            if (actor->draw_outline)
                 glStencilMask(0xFF); // Enable writing to the stencil buffer
             actor->Draw(elapsed_time, camera.GetProjectionMatrix(), view);
             glStencilMask(0x00); // Disable writing to stencil buffer
@@ -303,22 +283,153 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
                  iter++)
             {
                 Actor* actor = iter->second;
-                if (!actor->DrawOutline)
+                if (!actor->draw_outline)
                     continue;
 
-                actor->Model.SetShaderToAllMaterials(&outline_shader);
-                actor->Transform.Scale += opts.Stencil.ScaleFactor;
+                actor->model.SetShaderToAllMaterials(&outline_shader);
+                actor->transform.Scale += opts.Stencil.ScaleFactor;
                 actor->Draw(elapsed_time, camera.GetProjectionMatrix(), view);
-                actor->Transform.Scale -= opts.Stencil.ScaleFactor;
-                actor->Model.SetShaderToAllMaterials(&phong_shader);
+                actor->transform.Scale -= opts.Stencil.ScaleFactor;
+                actor->model.SetShaderToAllMaterials(&phong_shader);
             }
             glEnable(GL_DEPTH_TEST);
         }
 
+        // =========================================================================================
+        // Second render pass (Framebuffer texture to quad)
+        // =========================================================================================
+
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_STENCIL_TEST);
+
+        // Make sure that when rendering this quad its not in wireframe mode regardless
+        if (IsRenderingInWireframeMode())
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(framebuffer_shader.GetID());
+        glBindVertexArray(framebuffer_vao);
+
+        // Attach framebuffer texture as u_ColorAttachment
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, framebuffer_color);
+
+        glDrawArrays(GL_TRIANGLES, 0, sizeof(framebuffer_quad_vertices) / sizeof(float));
+
+        if (IsRenderingInWireframeMode())
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_STENCIL_TEST);
+
         window.SwapBuffers();
     }
 
+    glDeleteTextures(1, &framebuffer_color);
+    glDeleteRenderbuffers(1, &framebuffer_depth_stencil);
+    glDeleteFramebuffers(1, &framebuffer);
     return 0;
+}
+
+Actor::Array Actor::CreateActors(Shader& shader)
+{
+    return {
+        // Floor
+        Actor{
+            .transform =
+                {
+                    .Position = glm::vec3(0.0f, -3.0f, 0.0f),
+                    .Scale    = glm::vec3(20.0f, 20.0f, 1.0f),
+                    .Rotation = glm::vec3(glm::radians(90.0f), 0.0f, 0.0f),
+                },
+            .model = Mesh(ShapeVertexData::GetPlane(),
+                          Material{
+                              .Shader   = &shader,
+                              .Diffuse  = Texture(GetAssetPath("textures/wood-floor/diffuse.png")),
+                              .Specular = Texture(GetAssetPath("textures/wood-floor/specular.png")),
+                              .TilingFactor = glm::vec2(3.0f),
+                              .Shininess    = 10,
+                          }),
+        },
+        // Sphere
+        Actor{
+            .transform =
+                {
+                    .Position = glm::vec3(-2.1f, 0.0f, 0.0f),
+                    .Rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
+                },
+            .model = Mesh(ShapeVertexData::GenerateSphere(20, 20),
+                          Material{
+                              .Shader    = &shader,
+                              .Diffuse   = Texture(GetAssetPath("textures/eyeball.png"), false),
+                              .Specular  = glm::vec3(1.0f),
+                              .Shininess = 256,
+                          }),
+            .draw_outline = true,
+        },
+        // Backpack
+        Actor{
+            .transform =
+                {
+                    .Position = glm::vec3(2.0f, 0.0f, 0.0f),
+                },
+            .model =
+                Model(GetAssetPath("models/backpack/backpack.obj"), &shader, ModelLoading_FlipUVs),
+        },
+        // Grass
+        Actor{
+            .transform =
+                {
+                    .Position = glm::vec3(0.0f, -2.5f, 2.0f),
+                },
+            .model      = Mesh(ShapeVertexData::GetPlane(),
+                               Material{
+                                   .Shader  = &shader,
+                                   .Diffuse = Texture(GetAssetPath("textures/grass.png"),
+                                                      false,
+                                                      true,
+                                                      TextureFilter::Linear,
+                                                      TextureFilterWrapping::ClampToEdge),
+                               }),
+            .cull_faces = false,
+        },
+        // Windows
+        Actor{
+            .transform =
+                {
+                    .Position = glm::vec3(0.0f, 0.0f, 1.0f),
+                },
+            .model = Mesh(ShapeVertexData::GetPlane(),
+                          Material{Material{
+                              .Shader  = &shader,
+                              .Diffuse = Texture(GetAssetPath("textures/transparent_window.png"),
+                                                 false,
+                                                 true,
+                                                 TextureFilter::Linear,
+                                                 TextureFilterWrapping::ClampToEdge),
+                          }}),
+            .cull_faces = false,
+        },
+        Actor{
+            .transform =
+                {
+                    .Position = glm::vec3(0.0f, 0.0f, 2.0f),
+                },
+            .model = Mesh(ShapeVertexData::GetPlane(),
+                          Material{Material{
+                              .Shader  = &shader,
+                              .Diffuse = Texture(GetAssetPath("textures/transparent_window.png"),
+                                                 false,
+                                                 true,
+                                                 TextureFilter::Linear,
+                                                 TextureFilterWrapping::ClampToEdge),
+                          }}),
+            .cull_faces = false,
+        },
+    };
 }
 
 } // namespace LrnGL

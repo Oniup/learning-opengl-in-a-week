@@ -13,9 +13,9 @@
 
 namespace LrnGL {
 
-bool        RenderWireframeMode = false;
-bool        MouseHidden         = false;
-std::string AssetDirectory;
+bool        render_wireframe_mode = false;
+bool        mouse_hidden          = false;
+std::string asset_directory;
 
 std::string_view GetOpenGLErrorCodeAsString(unsigned error)
 {
@@ -35,17 +35,17 @@ std::string_view GetOpenGLErrorCodeAsString(unsigned error)
 
 void SetAssetDirectory(std::string_view directory)
 {
-    AssetDirectory = std::string(directory);
+    asset_directory = std::string(directory);
 }
 
 std::string GetAssetPath(std::string_view path)
 {
-    return fmt::format("{}/{}", AssetDirectory, path);
+    return fmt::format("{}/{}", asset_directory, path);
 }
 
 std::string_view GetAssetPath(char* buffer, size_t buffer_length, std::string_view path)
 {
-    auto result = fmt::format_to_n(buffer, buffer_length, "{}/{}", AssetDirectory, path);
+    auto result = fmt::format_to_n(buffer, buffer_length, "{}/{}", asset_directory, path);
     *result.out = '\0';
     return std::string_view(buffer, result.size);
 }
@@ -59,8 +59,8 @@ void CommonEventHandles(const SDL_Event& event, Window& window, Camera& camera, 
 {
     window.HandleEvents(event);
 
-    camera.UpdateLookDirection(MouseHidden, event, delta);
-    camera.UpdateProjectionMatrix(MouseHidden, event, window);
+    camera.UpdateLookDirection(mouse_hidden, event, delta);
+    camera.UpdateProjectionMatrix(mouse_hidden, event, window);
 
     if (event.type == SDL_EVENT_KEY_DOWN)
     {
@@ -75,21 +75,21 @@ void CommonEventHandles(const SDL_Event& event, Window& window, Camera& camera, 
 
 bool IsMouseHidden()
 {
-    return MouseHidden;
+    return mouse_hidden;
 }
 
 bool IsRenderWireframeMode()
 {
-    return RenderWireframeMode;
+    return render_wireframe_mode;
 }
 
 void ToggleCursorHiddenMode(Window& window)
 {
-    MouseHidden = !MouseHidden;
-    SDL_SetWindowRelativeMouseMode(window.GetContext(), MouseHidden);
+    mouse_hidden = !mouse_hidden;
+    SDL_SetWindowRelativeMouseMode(window.GetContext(), mouse_hidden);
 
     ImGuiIO& io = ImGui::GetIO();
-    if (MouseHidden)
+    if (mouse_hidden)
         io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
     else
         io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
@@ -97,8 +97,13 @@ void ToggleCursorHiddenMode(Window& window)
 
 void ToggleRenderWireframeMode()
 {
-    RenderWireframeMode = !RenderWireframeMode;
-    glPolygonMode(GL_FRONT_AND_BACK, RenderWireframeMode ? GL_LINE : GL_FILL);
+    render_wireframe_mode = !render_wireframe_mode;
+    glPolygonMode(GL_FRONT_AND_BACK, render_wireframe_mode ? GL_LINE : GL_FILL);
+}
+
+bool IsRenderingInWireframeMode()
+{
+    return render_wireframe_mode;
 }
 
 void CalculateDeltaTime(float& elapsed_time, float& delta)

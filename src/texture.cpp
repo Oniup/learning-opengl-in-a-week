@@ -83,12 +83,10 @@ Texture& Texture::operator=(Texture&& texture)
 void Texture::Destroy()
 {
     if (m_ID != 0 && m_Owns)
-    {
         glDeleteTextures(1, &m_ID);
-        m_ID     = 0;
-        m_Width  = 0;
-        m_Height = 0;
-    }
+    m_ID     = 0;
+    m_Width  = 0;
+    m_Height = 0;
 }
 
 void Texture::LoadFromSurface(SDL_Surface* loaded_surface, bool srgb_correction,
