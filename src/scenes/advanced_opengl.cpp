@@ -96,6 +96,8 @@ struct AdvancedOpenGL
         int      KernelMode = 0;
     } Framebuffer;
 
+    bool RenderSkyBoxFirst = false;
+
     ~AdvancedOpenGL()
     {
         glDeleteFramebuffers(1, &Framebuffer.Id);
@@ -117,9 +119,10 @@ struct AdvancedOpenGL
 
     void Edit()
     {
-        ImGui::Begin("Edit Fog");
+        ImGui::Begin("Fog and SkyBox");
         ImGui::Checkbox("View depth buffer", &Fog.ViewDepthBuffer);
         ImGui::Checkbox("Square density", &Fog.SquareFog);
+        ImGui::Checkbox("Render sky box first", &RenderSkyBoxFirst);
         ImGui::ColorEdit3("Color", glm::value_ptr(Fog.Color));
         ImGui::SliderFloat("Density", &Fog.Density, 0.0f, 1.0f, "%.4f");
         ImGui::End();
@@ -336,7 +339,8 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glStencilMask(0x00);
 
-        skybox.Draw(camera.GetProjectionMatrix(), view);
+        if (adv.RenderSkyBoxFirst)
+            skybox.Draw(camera.GetProjectionMatrix(), view);
 
         light_manager.EditLightPropertiesMenu();
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
@@ -380,6 +384,10 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
             actor->Draw(elapsed_time, camera.GetProjectionMatrix(), view);
             glStencilMask(0x00); // Disable writing to stencil buffer
         }
+
+        // Draw sky box last so that we can optimise the number of fragments being drawn
+        if (!adv.RenderSkyBoxFirst)
+            skybox.Draw(camera.GetProjectionMatrix(), view);
 
         // Draw outline
         if (!adv.Stencil.Disable)
@@ -434,7 +442,7 @@ Actor::Array Actor::CreateActors(Shader& shader)
                               .TilingFactor = glm::vec2(3.0f),
                               .Shininess    = 10,
                           }),
-            .cull_faces = false,
+            // .cull_faces = false,
         },
         // Sphere
         Actor{

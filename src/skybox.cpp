@@ -97,7 +97,7 @@ SkyBox::~SkyBox()
 
 void SkyBox::Draw(const glm::mat4& projection, const glm::mat4& view)
 {
-    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LEQUAL);
 
     m_Shader.Uniform("u_Projection", projection);
     m_Shader.Uniform("u_View", glm::mat4(glm::mat3(view))); // Remove camera translation
@@ -109,7 +109,7 @@ void SkyBox::Draw(const glm::mat4& projection, const glm::mat4& view)
     glBindVertexArray(m_VertexArray);
     glDrawArrays(GL_TRIANGLES, 0, vertices_count);
 
-    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
 }
 
 void SkyBox::LoadTextures(const std::array<SDL_Surface*, 6>& surfaces, bool srgb_correction)

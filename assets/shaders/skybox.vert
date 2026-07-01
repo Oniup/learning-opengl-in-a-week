@@ -9,6 +9,7 @@ uniform mat4 u_View;
 
 void main()
 {
-    TexCoords   = a_Position;
-    gl_Position = u_Projection * u_View * vec4(a_Position, 1.0);
+    vec4 vertex_position = u_Projection * u_View * vec4(a_Position, 1.0);
+    gl_Position          = vertex_position.xyww; // Set the depth to always be 1.0, farthest away
+    TexCoords            = a_Position;
 }
