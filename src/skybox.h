@@ -22,6 +22,8 @@ public:
     glm::vec3 GetAverageColor() const { return m_AverageColor; }
 
     void Draw(const glm::mat4& projection, const glm::mat4& view);
+    void PushInfoToShader(Shader& shader, unsigned texture_index);
+    void InitializeTextureUniform(Shader& shader, unsigned texture_index);
 
 private:
     void LoadTextures(const std::array<SDL_Surface*, 6>& surfaces, bool srgb_correction);

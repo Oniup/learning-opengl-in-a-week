@@ -112,6 +112,18 @@ void SkyBox::Draw(const glm::mat4& projection, const glm::mat4& view)
     glDepthFunc(GL_LESS);
 }
 
+void SkyBox::PushInfoToShader(Shader& shader, unsigned texture_index)
+{
+    glUseProgram(shader.GetID());
+    glActiveTexture(GL_TEXTURE0 + texture_index);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_Texture);
+}
+
+void SkyBox::InitializeTextureUniform(Shader& shader, unsigned texture_index)
+{
+    shader.Uniform("u_SkyBox", texture_index);
+}
+
 void SkyBox::LoadTextures(const std::array<SDL_Surface*, 6>& surfaces, bool srgb_correction)
 {
     glGenTextures(1, &m_Texture);
@@ -176,7 +188,6 @@ void SkyBox::CalculateAverageColor(SDL_Surface* surface)
         total_b / pixel_count,
     };
     m_AverageColor /= 255;
-    fmt::print("Average color: {}, {}, {}\n", m_AverageColor.r, m_AverageColor.g, m_AverageColor.b);
 }
 
 void SkyBox::InitializeVertexArray()

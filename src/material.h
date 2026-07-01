@@ -32,7 +32,9 @@ struct Material
     MaterialColorInput Specular     = glm::vec3(0.0f);
     MaterialColorInput Emission     = glm::vec3(0.0f);
     glm::vec2          TilingFactor = glm::vec2(1.0f);
-    int                Shininess    = 32;
+
+    int   Shininess        = 32;
+    float ReflectionFactor = 0.3f;
 
     void PushInfoToShader() const;
 };

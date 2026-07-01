@@ -18,6 +18,7 @@ struct Material
     MaterialColorInput Specular;
     MaterialColorInput Emission;
     float              Shininess;
+    float              ReflectionFactor;
 };
 
 struct Light
@@ -45,10 +46,10 @@ layout(std140, binding = 0) uniform LightData
     Light u_Lights[10];
 };
 
-uniform vec3 u_CameraPosition;
-uniform int  u_LightCount;
-// uniform Light u_Lights[10];
-uniform vec3 u_GlobalAmbientLight;
+uniform vec3        u_CameraPosition;
+uniform int         u_LightCount;
+uniform vec3        u_GlobalAmbientLight;
+uniform samplerCube u_SkyBox;
 
 // Fog
 uniform float u_Near;
@@ -97,6 +98,13 @@ float CalculateAttenuation(Light light)
     float denominator =
         (light.Quadratic * distance * distance) + (light.Linear * distance) + light.Constant;
     return 1.0 / denominator;
+}
+
+vec3 CalculateSkyBoxReflection(vec3 normal)
+{
+    vec3 camera_direction = normalize(FragPosition - u_CameraPosition);
+    vec3 reflection       = reflect(camera_direction, normal);
+    return texture(u_SkyBox, reflection).rgb;
 }
 
 vec4 GetObjectColor(vec3 normal)
@@ -151,7 +159,10 @@ vec4 GetObjectColor(vec3 normal)
     vec3 emission = emission_texture.rgb * emission_pulse * u_Material.Emission.Color;
     vec3 ambient  = ambient_light * diffuse_texture.rgb;
 
-    return vec4(diffuse + specular + emission + ambient, diffuse_texture.a);
+    vec3 skybox_reflection = CalculateSkyBoxReflection(normal) * u_Material.ReflectionFactor;
+    vec3 skybox_specular   = skybox_reflection * specular_texture.rgb * u_Material.Specular.Color;
+
+    return vec4(diffuse + specular + skybox_specular + emission + ambient, diffuse_texture.a);
 }
 
 void main()
@@ -165,6 +176,7 @@ void main()
 
     vec3 normal = normalize(Normal);
     vec4 color  = GetObjectColor(normal);
+    // vec4 color  = vec4(CalculateSkyBoxReflection(normal), 1.0);
 
     float linear_depth = LinearizeDepth(gl_FragCoord.z);
     float fog_factor;

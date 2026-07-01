@@ -78,7 +78,7 @@ struct AdvancedOpenGL
 
     struct
     {
-        bool      Disable     = false;
+        bool      Disable     = true;
         bool      DrawOutline = true;
         bool      IgnoreDepth = false;
         float     ScaleFactor = 0.05f;
@@ -96,7 +96,7 @@ struct AdvancedOpenGL
         int      KernelMode = 0;
     } Framebuffer;
 
-    bool RenderSkyBoxFirst = false;
+    bool RenderSkyBoxFirst = true;
 
     ~AdvancedOpenGL()
     {
@@ -304,6 +304,8 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         false);
     adv.Fog.Color = skybox.GetAverageColor();
     light_manager.SetGlobalAmbientLight(skybox.GetAverageColor());
+    unsigned skybox_texture_index = 3;
+    skybox.InitializeTextureUniform(phong_shader, skybox_texture_index);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
@@ -341,6 +343,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 
         if (adv.RenderSkyBoxFirst)
             skybox.Draw(camera.GetProjectionMatrix(), view);
+        skybox.PushInfoToShader(phong_shader, skybox_texture_index);
 
         light_manager.EditLightPropertiesMenu();
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
@@ -439,8 +442,9 @@ Actor::Array Actor::CreateActors(Shader& shader)
                               .Shader   = &shader,
                               .Diffuse  = Texture(GetAssetPath("textures/wood-floor/diffuse.png")),
                               .Specular = Texture(GetAssetPath("textures/wood-floor/specular.png")),
-                              .TilingFactor = glm::vec2(3.0f),
-                              .Shininess    = 10,
+                              .TilingFactor     = glm::vec2(3.0f),
+                              .Shininess        = 10,
+                              .ReflectionFactor = 0.0f,
                           }),
             // .cull_faces = false,
         },
@@ -477,12 +481,13 @@ Actor::Array Actor::CreateActors(Shader& shader)
                 },
             .model      = Mesh(ShapeVertexData::GetPlane(),
                                Material{
-                                   .Shader  = &shader,
-                                   .Diffuse = Texture(GetAssetPath("textures/grass.png"),
-                                                      false,
-                                                      true,
-                                                      TextureFilter::Linear,
-                                                      TextureFilterWrapping::ClampToEdge),
+                                   .Shader           = &shader,
+                                   .Diffuse          = Texture(GetAssetPath("textures/grass.png"),
+                                                               false,
+                                                               true,
+                                                               TextureFilter::Linear,
+                                                               TextureFilterWrapping::ClampToEdge),
+                                   .ReflectionFactor = 0.0f,
                                }),
             .cull_faces = false,
         },

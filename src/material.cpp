@@ -71,6 +71,7 @@ void Material::PushInfoToShader() const
     // Other
     Shader->Uniform("u_Material.Shininess", Shininess);
     Shader->Uniform("u_Material_TilingFactor", TilingFactor);
+    Shader->Uniform("u_Material.ReflectionFactor", ReflectionFactor);
 }
 
 } // namespace LrnGL
