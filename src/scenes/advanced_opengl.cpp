@@ -13,6 +13,7 @@
 #include "material.h"
 #include "model.h"
 #include "scenes/scenes.h"
+#include "skybox.h"
 #include "texture.h"
 #include "transform.h"
 #include "utilities.h"
@@ -287,6 +288,20 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
     AdvancedOpenGL adv;
     adv.CreateFramebuffer(window);
 
+    SkyBox skybox(
+        {
+            GetAssetPath("textures/skybox/right.jpg"),
+            GetAssetPath("textures/skybox/left.jpg"),
+            GetAssetPath("textures/skybox/top.jpg"),
+            GetAssetPath("textures/skybox/bottom.jpg"),
+            GetAssetPath("textures/skybox/front.jpg"),
+            GetAssetPath("textures/skybox/back.jpg"),
+        },
+        false,
+        false);
+    adv.Fog.Color = skybox.GetAverageColor();
+    light_manager.SetGlobalAmbientLight(skybox.GetAverageColor());
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
 
@@ -317,9 +332,11 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         glBindFramebuffer(GL_FRAMEBUFFER, adv.Framebuffer.Id);
 
         glStencilMask(0xFF);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glStencilMask(0x00);
+
+        skybox.Draw(camera.GetProjectionMatrix(), view);
 
         light_manager.EditLightPropertiesMenu();
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);

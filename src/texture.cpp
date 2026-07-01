@@ -15,6 +15,8 @@ Texture Texture::Invalid;
 Texture::Texture(std::string_view path, bool srgb_correction, bool flip_vertically,
                  TextureFilter filter, TextureFilterWrapping wrapping)
 {
+    ASSERT_STRING_VIEW_NULL_TERMINATED(path);
+
     SDL_Surface* loaded_surface = IMG_Load(path.data());
     ASSERT(loaded_surface, "Failed to load image from '{}'", path);
 
@@ -97,7 +99,7 @@ void Texture::LoadFromSurface(SDL_Surface* loaded_surface, bool srgb_correction,
         SDL_FlipSurface(loaded_surface, SDL_FLIP_VERTICAL);
 
     SDL_Surface* surface = SDL_ConvertSurface(loaded_surface, SDL_PIXELFORMAT_RGBA32);
-    ASSERT(surface, "Failed to convert image to OpenGL friendly surface");
+    ASSERT(surface, "Failed to convert surface to RGBA32");
 
     m_Width  = surface->w;
     m_Height = surface->h;

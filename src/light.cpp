@@ -94,7 +94,8 @@ LightData* LightManager::GetLight(unsigned index)
 void LightManager::EditLightPropertiesMenu()
 {
     ImGui::Begin("Light Control");
-    ImGui::Checkbox("Render Light Debug Info", &m_RenderDebugInfo);
+    ImGui::Checkbox("Render Light debug info", &m_RenderDebugInfo);
+    ImGui::ColorEdit3("Global ambient light", glm::value_ptr(m_GlobalAmbientLight));
 
     unsigned changes = 0;
     if (m_RenderDebugInfo)
