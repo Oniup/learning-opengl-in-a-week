@@ -73,6 +73,7 @@ Window::Window(int width, int height)
     fmt::print("Loaded OpenGL {}.{}\n",
                GLAD_VERSION_MAJOR(glad_version),
                GLAD_VERSION_MINOR(glad_version));
+    glViewport(0, 0, width, height);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

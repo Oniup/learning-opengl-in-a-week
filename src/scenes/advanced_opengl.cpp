@@ -40,7 +40,7 @@ struct Actor
 };
 
 // clang-format off
-float framebuffer_quad_vertices[] = {
+constexpr float framebuffer_quad_vertices[] = {
     // positions   // texCoords
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
@@ -51,6 +51,7 @@ float framebuffer_quad_vertices[] = {
      1.0f,  1.0f,  1.0f, 1.0f
 };
 // clang-format on
+constexpr unsigned framebuffer_quad_vertices_count = 6;
 
 constexpr const char* FramebufferPostProcessingModeNames[] = {
     "Default",
@@ -87,24 +88,34 @@ struct AdvancedOpenGL
 
     struct
     {
-        unsigned Id;
+        unsigned ID;
         unsigned ColorTextureId;
         unsigned DepthStencilRenderBuffer;
-        unsigned VertexArray;
-        unsigned VertexBuffer;
-        int      Mode       = 0;
-        int      KernelMode = 0;
+        int      Mode        = 0;
+        int      KernelMode  = 0;
+        int      SampleCount = 4;
+
+        struct
+        {
+            unsigned ID;
+            unsigned ColorTextureId;
+            unsigned VertexArray;
+            unsigned VertexBuffer;
+        } Intermediate;
     } Framebuffer;
 
     bool RenderSkyBoxFirst = true;
 
     ~AdvancedOpenGL()
     {
-        glDeleteFramebuffers(1, &Framebuffer.Id);
+        glDeleteFramebuffers(1, &Framebuffer.ID);
         glDeleteTextures(1, &Framebuffer.ColorTextureId);
         glDeleteRenderbuffers(1, &Framebuffer.DepthStencilRenderBuffer);
-        glDeleteVertexArrays(1, &Framebuffer.VertexArray);
-        glDeleteBuffers(1, &Framebuffer.VertexBuffer);
+
+        glDeleteFramebuffers(1, &Framebuffer.Intermediate.ID);
+        glDeleteTextures(1, &Framebuffer.Intermediate.ColorTextureId);
+        glDeleteVertexArrays(1, &Framebuffer.Intermediate.VertexArray);
+        glDeleteBuffers(1, &Framebuffer.Intermediate.VertexBuffer);
     }
 
     void PushInfoToShader(Shader& shader, float near, float far)
@@ -117,7 +128,7 @@ struct AdvancedOpenGL
         shader.Uniform("u_SquareFog", Fog.SquareFog);
     }
 
-    void Edit()
+    void Edit(const Window& window)
     {
         ImGui::Begin("Fog and SkyBox");
         ImGui::Checkbox("View depth buffer", &Fog.ViewDepthBuffer);
@@ -143,6 +154,14 @@ struct AdvancedOpenGL
                      &Framebuffer.Mode,
                      FramebufferPostProcessingModeNames,
                      IM_ARRAYSIZE(FramebufferPostProcessingModeNames));
+
+        int max_samples;
+        glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
+        int sample_count = Framebuffer.SampleCount;
+        ImGui::SliderInt("Sample count", &sample_count, 1, max_samples);
+        if (sample_count != Framebuffer.SampleCount)
+            UpdateMultiSampleCount(sample_count, window);
+
         if (Framebuffer.Mode == 4) // Kernel mode
         {
             ImGui::Combo("Kernel Mode",
@@ -153,17 +172,57 @@ struct AdvancedOpenGL
         ImGui::End();
     }
 
-    void CreateFramebuffer(Window& window)
+    void CreateFramebuffer(const Window& window)
     {
-        glGenFramebuffers(1, &Framebuffer.Id);
+        // Create framebuffer
+        // -----------------------------------------------------------------------------------------
+        glGenFramebuffers(1, &Framebuffer.ID);
         glGenTextures(1, &Framebuffer.ColorTextureId);
         glGenRenderbuffers(1, &Framebuffer.DepthStencilRenderBuffer);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer.Id);
-        glBindTexture(GL_TEXTURE_2D, Framebuffer.ColorTextureId);
+        glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer.ID);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, Framebuffer.ColorTextureId);
         glBindRenderbuffer(GL_RENDERBUFFER, Framebuffer.DepthStencilRenderBuffer);
 
         // Color texture attachment
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
+                                Framebuffer.SampleCount,
+                                GL_RGB,
+                                window.GetWidth(),
+                                window.GetHeight(),
+                                GL_TRUE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER,
+                               GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D_MULTISAMPLE,
+                               Framebuffer.ColorTextureId,
+                               0);
+
+        // Depth and stencil render buffer object attachment
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER,
+                                         Framebuffer.SampleCount,
+                                         GL_DEPTH24_STENCIL8,
+                                         window.GetWidth(),
+                                         window.GetHeight());
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                                  GL_DEPTH_STENCIL_ATTACHMENT,
+                                  GL_RENDERBUFFER,
+                                  Framebuffer.DepthStencilRenderBuffer);
+
+        // framebuffer creation complete
+        ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+               "Failed to create MSAA enabled framebuffer");
+
+        // Create Intermediate framebuffer (Only need color attachment)
+        // -----------------------------------------------------------------------------------------
+        glGenFramebuffers(1, &Framebuffer.Intermediate.ID);
+        glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer.Intermediate.ID);
+
+        glGenTextures(1, &Framebuffer.Intermediate.ColorTextureId);
+        glBindTexture(GL_TEXTURE_2D, Framebuffer.Intermediate.ColorTextureId);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -177,26 +236,20 @@ struct AdvancedOpenGL
                      GL_RGB,
                      GL_UNSIGNED_BYTE,
                      nullptr);
-        glFramebufferTexture2D(
-            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Framebuffer.ColorTextureId, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER,
+                               GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D,
+                               Framebuffer.Intermediate.ColorTextureId,
+                               0);
 
-        // Depth and stencil render buffer object attachment
-        glRenderbufferStorage(
-            GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window.GetWidth(), window.GetHeight());
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                                  GL_DEPTH_STENCIL_ATTACHMENT,
-                                  GL_RENDERBUFFER,
-                                  Framebuffer.DepthStencilRenderBuffer);
-
-        // framebuffer creation complete
-        ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0); // Reset back to default framebuffer
+        ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+               "Failed to create intermediate framebuffer");
 
         // framebuffer quad data
-        glGenVertexArrays(1, &Framebuffer.VertexArray);
-        glGenBuffers(1, &Framebuffer.VertexBuffer);
-        glBindVertexArray(Framebuffer.VertexArray);
-        glBindBuffer(GL_ARRAY_BUFFER, Framebuffer.VertexBuffer);
+        glGenVertexArrays(1, &Framebuffer.Intermediate.VertexArray);
+        glGenBuffers(1, &Framebuffer.Intermediate.VertexBuffer);
+        glBindVertexArray(Framebuffer.Intermediate.VertexArray);
+        glBindBuffer(GL_ARRAY_BUFFER, Framebuffer.Intermediate.VertexBuffer);
         glBufferData(GL_ARRAY_BUFFER,
                      sizeof(framebuffer_quad_vertices),
                      framebuffer_quad_vertices,
@@ -208,8 +261,72 @@ struct AdvancedOpenGL
         glEnableVertexAttribArray(1);
     }
 
-    void RenderToMainFramebuffer(Shader& shader)
+    void UpdateMultiSampleCount(int count, const Window& window)
     {
+        Framebuffer.SampleCount = count;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer.ID);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, Framebuffer.ColorTextureId);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
+                                Framebuffer.SampleCount,
+                                GL_RGB,
+                                window.GetWidth(),
+                                window.GetHeight(),
+                                GL_TRUE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER,
+                               GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D_MULTISAMPLE,
+                               Framebuffer.ColorTextureId,
+                               0);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, Framebuffer.DepthStencilRenderBuffer);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER,
+                                         Framebuffer.SampleCount,
+                                         GL_DEPTH24_STENCIL8,
+                                         window.GetWidth(),
+                                         window.GetHeight());
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                                  GL_DEPTH_STENCIL_ATTACHMENT,
+                                  GL_RENDERBUFFER,
+                                  Framebuffer.DepthStencilRenderBuffer);
+    }
+
+    void RenderToMainFramebuffer(Shader& shader, Window& window)
+    {
+        // glBindFramebuffer(GL_READ_FRAMEBUFFER, Framebuffer.ID);
+        // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        // glBlitFramebuffer(0,
+        //                   0,
+        //                   window.GetWidth(),
+        //                   window.GetHeight(),
+        //                   0,
+        //                   0,
+        //                   window.GetWidth(),
+        //                   window.GetHeight(),
+        //                   GL_COLOR_BUFFER_BIT,
+        //                   GL_NEAREST);
+
+        // Blitz framebuffer color data to intermediate framebuffer
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, Framebuffer.ID);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, Framebuffer.Intermediate.ID);
+        glBlitFramebuffer(0,
+                          0,
+                          window.GetWidth(),
+                          window.GetHeight(),
+                          0,
+                          0,
+                          window.GetWidth(),
+                          window.GetHeight(),
+                          GL_COLOR_BUFFER_BIT,
+                          GL_NEAREST);
+        unsigned error = glGetError();
+        ASSERT(error == GL_NO_ERROR,
+               "Failed to blitz framebuffer with error code {} '{}'",
+               error,
+               GetOpenGLErrorCodeAsString(error));
+
+        // Draw blitz framebuffer color attachment to quad and render to main framebuffer
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_STENCIL_TEST);
 
@@ -217,6 +334,7 @@ struct AdvancedOpenGL
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // Post processing effect options
         shader.Uniform("u_PostProcessingMode", Framebuffer.Mode);
         shader.Uniform("u_PostProcessingKernelMode", Framebuffer.KernelMode);
 
@@ -225,11 +343,11 @@ struct AdvancedOpenGL
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         glUseProgram(shader.GetID());
-        glBindVertexArray(Framebuffer.VertexArray);
+        glBindVertexArray(Framebuffer.Intermediate.VertexArray);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, Framebuffer.ColorTextureId);
+        glBindTexture(GL_TEXTURE_2D, Framebuffer.Intermediate.ColorTextureId);
 
-        glDrawArrays(GL_TRIANGLES, 0, sizeof(framebuffer_quad_vertices) / sizeof(float));
+        glDrawArrays(GL_TRIANGLES, 0, framebuffer_quad_vertices_count);
 
         if (IsRenderingInWireframeMode())
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -240,7 +358,24 @@ struct AdvancedOpenGL
 
     void ResizeFramebuffer(Window& window)
     {
-        glBindTexture(GL_TEXTURE_2D, Framebuffer.ColorTextureId);
+        // MSAA framebuffer enabled
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, Framebuffer.ColorTextureId);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
+                                Framebuffer.SampleCount,
+                                GL_RGB,
+                                window.GetWidth(),
+                                window.GetHeight(),
+                                GL_TRUE);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, Framebuffer.DepthStencilRenderBuffer);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER,
+                                         Framebuffer.SampleCount,
+                                         GL_DEPTH24_STENCIL8,
+                                         window.GetWidth(),
+                                         window.GetHeight());
+
+        // Intermediate
+        glBindTexture(GL_TEXTURE_2D, Framebuffer.Intermediate.ColorTextureId);
         glTexImage2D(GL_TEXTURE_2D,
                      0,
                      GL_RGB,
@@ -250,17 +385,12 @@ struct AdvancedOpenGL
                      GL_RGB,
                      GL_UNSIGNED_BYTE,
                      nullptr);
-
-        glBindRenderbuffer(GL_RENDERBUFFER, Framebuffer.DepthStencilRenderBuffer);
-        glRenderbufferStorage(
-            GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window.GetWidth(), window.GetHeight());
     }
 };
 
 int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
 {
     // Phong Shader with Fog
-    bool   enable_fog = true;
     Shader phong_shader(GetAssetPath("shaders/advanced_phong.frag"),
                         GetAssetPath("shaders/phong.vert"));
     Shader outline_shader(GetAssetPath("shaders/flat_color.frag"),
@@ -276,7 +406,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
     light_manager.PushLight(
         LightData{
             .Type      = LightData::Directional,
-            .Direction = glm::vec3(1.0f, -1.0f, -0.4f),
+            .Direction = glm::vec3(0.8f, -0.6f, 1.0f),
         },
         false);
     light_manager.PushLight(LightData{
@@ -284,7 +414,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         .Color    = RGBToNormalized(215, 188, 133),
     });
 
-    Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), 5.0f, 0.01f);
+    Camera camera(glm::vec3(-7.0f, 0.0f, 7.0f), 5.0f, 0.01f);
     camera.InitializeProjection(window);
 
     Actor::Array   actors = Actor::CreateActors(phong_shader);
@@ -308,6 +438,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
     skybox.InitializeTextureUniform(phong_shader, skybox_texture_index);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);
     glEnable(GL_STENCIL_TEST);
 
     glEnable(GL_BLEND);
@@ -334,7 +465,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         glm::mat4 view = camera.CreateViewMatrix();
 
         // First render pass (Rendering scene)
-        glBindFramebuffer(GL_FRAMEBUFFER, adv.Framebuffer.Id);
+        glBindFramebuffer(GL_FRAMEBUFFER, adv.Framebuffer.ID);
 
         glStencilMask(0xFF);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -349,11 +480,8 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         light_manager.DrawDebugInfo(camera.GetProjectionMatrix(), view);
         light_manager.PushLightInfoToUniformBlockLayout(phong_shader, camera.GetPosition());
 
-        if (enable_fog)
-        {
-            adv.Edit();
-            adv.PushInfoToShader(phong_shader, camera.GetNearPlane(), camera.GetFarPlane());
-        }
+        adv.Edit(window);
+        adv.PushInfoToShader(phong_shader, camera.GetNearPlane(), camera.GetFarPlane());
 
         std::map<float, Actor*> sorted_render_order;
         for (unsigned i = 1; i < actors.size(); i++)
@@ -420,7 +548,7 @@ int AdvancedOpenGLMain(Window& window, int argc, const char** argv)
         }
 
         // Second render pass to framebuffer
-        adv.RenderToMainFramebuffer(framebuffer_shader);
+        adv.RenderToMainFramebuffer(framebuffer_shader, window);
         window.SwapBuffers();
     }
     return 0;
